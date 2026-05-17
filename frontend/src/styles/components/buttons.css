@@ -1,0 +1,83 @@
+/* components/buttons.css — recreates shared.jsx GoldBtn/GhostBtn/GreenBtn/RedBtn
+   pixel-perfect with tokens + BEM. AGENT: Frontend. */
+.c-btn {
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-heading);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s var(--ease-bounce);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.c-btn--full { width: 100%; }
+
+/* ── Gold ── */
+.c-btn--gold {
+  background: var(--grad-gold-btn);
+  color: var(--negro);
+  font-weight: 900;
+  box-shadow: var(--shadow-gold-btn);
+}
+.c-btn--gold:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 28px rgba(212, 175, 55, 0.6);
+}
+.c-btn--gold:active { transform: scale(0.97); }
+
+/* ── Ghost ── */
+.c-btn--ghost {
+  background: transparent;
+  border: 1.5px solid rgba(212, 175, 55, 0.4);
+  color: rgba(212, 175, 55, 0.85);
+  font-weight: 700;
+  transition: all 0.18s;
+}
+.c-btn--ghost:hover {
+  border-color: var(--dorado);
+  background: rgba(212, 175, 55, 0.08);
+  color: var(--dorado-claro);
+}
+
+/* ── Green ── */
+.c-btn--green {
+  background: var(--verde);
+  color: var(--crema);
+  font-weight: 800;
+  box-shadow: var(--shadow-green-glow);
+  transition: all 0.18s;
+}
+.c-btn--green:hover { background: var(--verde-light); }
+.c-btn--green:disabled {
+  background: rgba(14, 122, 67, 0.3);
+  box-shadow: none;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Red ── */
+.c-btn--red {
+  background: transparent;
+  border: 1.5px solid rgba(231, 76, 60, 0.4);
+  color: var(--error);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  transition: all 0.15s;
+}
+.c-btn--red:hover {
+  background: rgba(231, 76, 60, 0.12);
+  border-color: var(--error);
+}
+
+/* ── Sizes (gold/green share scale; ghost/red have their own per shared.jsx) ── */
+.c-btn--sm { padding: 9px 24px; font-size: 12px; }
+.c-btn--md { padding: 13px 40px; font-size: 15px; }
+.c-btn--lg { padding: 17px 60px; font-size: 19px; }
+.c-btn--ghost.c-btn--sm { padding: 7px 20px; font-size: 11px; }
+.c-btn--ghost.c-btn--md { padding: 11px 32px; font-size: 14px; }
+.c-btn--ghost.c-btn--lg { padding: 14px 48px; font-size: 16px; }
+.c-btn--red.c-btn--sm { padding: 7px 18px; font-size: 11px; }
+.c-btn--red.c-btn--md { padding: 10px 26px; font-size: 13px; }

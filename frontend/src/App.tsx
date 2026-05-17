@@ -1,7 +1,15 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Splash from "@/screens/Splash";
+import Landing from "@/screens/Landing";
+import MainMenu from "@/screens/MainMenu";
+import Setup from "@/screens/Setup";
+import Lobby from "@/screens/Lobby";
+import Results from "@/screens/Results";
+import League from "@/screens/League";
+import GameTable from "@/screens/GameTable";
 
 // AGENT: Frontend — route table mirrors CLAUDE.md §4.3 screen inventory.
-// Screens land in Bloque B/C; placeholders keep `npm run dev` green meanwhile.
+// Remaining screens land in Bloque B/C; placeholders keep dev green meanwhile.
 function Placeholder({ name }: { name: string }) {
   return (
     <div
@@ -24,18 +32,18 @@ function Placeholder({ name }: { name: string }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Placeholder name="Splash" />} />
-      <Route path="/welcome" element={<Placeholder name="Landing" />} />
-      <Route path="/menu" element={<Placeholder name="Main Menu" />} />
-      <Route path="/play/solo" element={<Placeholder name="Single Setup" />} />
-      <Route path="/play/lobby/:code" element={<Placeholder name="Lobby" />} />
-      <Route path="/play/match/:id" element={<Placeholder name="Game Table" />} />
-      <Route path="/play/match/:id/results" element={<Placeholder name="Results" />} />
+      <Route path="/" element={<Splash />} />
+      <Route path="/welcome" element={<Landing />} />
+      <Route path="/menu" element={<MainMenu />} />
+      <Route path="/play/solo" element={<Setup />} />
+      <Route path="/play/lobby/:code" element={<Lobby />} />
+      <Route path="/play/match/:id" element={<GameTable />} />
+      <Route path="/play/match/:id/results" element={<Results />} />
       <Route path="/tutorial/:level" element={<Placeholder name="Tutorial" />} />
       <Route path="/profile/:userId" element={<Placeholder name="Profile" />} />
       <Route path="/settings" element={<Placeholder name="Settings" />} />
       <Route path="/store" element={<Placeholder name="Store" />} />
-      <Route path="/league" element={<Placeholder name="League" />} />
+      <Route path="/league" element={<League />} />
       <Route path="/tournament" element={<Placeholder name="Tournament" />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

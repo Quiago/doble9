@@ -1,0 +1,116 @@
+/* components/chrome.css — Logo, Panel, ScreenWrap, NavHeader, BackBtn,
+   Divider, OnlineDot. Pixel-perfect recreation of shared.jsx. */
+
+/* ── Logo (Montserrat 900 italic + gold gradient, NO Brush Script) ── */
+.c-logo { text-align: center; }
+.c-logo__word {
+  font-family: var(--font-logo);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  background: var(--grad-gold-logo);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 4px 3px rgba(0, 0, 0, 0.7));
+  user-select: none;
+}
+.c-logo--sm .c-logo__word { font-size: 28px; }
+.c-logo--md .c-logo__word { font-size: 44px; }
+.c-logo--lg .c-logo__word { font-size: 72px; }
+.c-logo--xl .c-logo__word { font-size: 96px; }
+.c-logo__tagline {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.5);
+  margin-top: 10px;
+  font-family: var(--font-body);
+}
+
+/* ── Panel (glass) ── */
+.c-panel {
+  background: var(--panel);
+  border: 1px solid var(--border-gold);
+  border-radius: 12px;
+  backdrop-filter: var(--blur-glass);
+  box-shadow: var(--shadow-card);
+}
+.c-panel--gold { border-color: var(--border-gold-strong); }
+
+/* ── ScreenWrap ── */
+.c-screen {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: screenFadeIn 0.3s ease;
+  background: var(--negro);
+}
+
+/* ── NavHeader ── */
+.c-navheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: var(--blur-glass);
+  flex-shrink: 0;
+}
+.c-navheader__slot { min-width: 90px; display: flex; }
+.c-navheader__slot--right { justify-content: flex-end; }
+.c-navheader__title {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--crema);
+}
+
+/* ── BackBtn ── */
+.c-back {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid rgba(247, 241, 227, 0.15);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  color: rgba(247, 241, 227, 0.65);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.c-back:hover {
+  border-color: rgba(247, 241, 227, 0.4);
+  color: var(--crema);
+}
+
+/* ── Divider ── */
+.c-divider { height: 1px; background: rgba(247, 241, 227, 0.07); }
+.c-divider--gold { background: rgba(212, 175, 55, 0.22); }
+
+/* ── OnlineDot ── */
+.c-online { display: flex; align-items: center; gap: 6px; }
+.c-online__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--verde);
+  box-shadow: 0 0 6px rgba(14, 122, 67, 0.7);
+}
+.c-online__label {
+  font-size: 11px;
+  color: rgba(247, 241, 227, 0.5);
+  font-family: var(--font-body);
+}

@@ -1,0 +1,295 @@
+/* game-panels.css — mesa shell organisms (GamePanels.jsx parity).
+   AGENT: Frontend. The wood table + chain + hand dock are Phaser (Bloque C);
+   these are the React/DOM side panels around the canvas. */
+
+/* ── PlayerAvatar ── */
+.c-pa { display: flex; flex-direction: column; align-items: center; gap: 5px; position: relative; }
+.c-pa__ring { position: relative; }
+.c-pa__disc {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  transition: box-shadow 0.4s ease;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.1);
+}
+.c-pa__disc--me { box-shadow: 0 0 0 2px var(--dorado), 0 0 10px rgba(212, 175, 55, 0.3); }
+.c-pa__disc--active { box-shadow: 0 0 0 2px var(--verde), 0 0 16px rgba(14, 122, 67, 0.5); }
+.c-pa__badge {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--verde);
+  color: #fff;
+  font-size: 7px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 8px rgba(14, 122, 67, 0.4);
+}
+.c-pa__name {
+  font-weight: 700;
+  color: var(--crema);
+  font-family: var(--font-heading);
+  line-height: 1.1;
+  text-align: center;
+}
+.c-pa__name--me { color: var(--dorado); }
+.c-pa__score { font-size: 10px; color: var(--dorado); font-weight: 600; text-align: center; }
+
+/* ── Shared panel chrome (Score / Chat / Mesa / Tips) ── */
+.c-gp {
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.c-gp--gold { border-color: rgba(212, 175, 55, 0.3); }
+.c-gp__h {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.7);
+  font-family: var(--font-heading);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.c-gp__body { padding: 8px 12px; }
+
+/* ── ScorePanel ── */
+.c-score__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.c-score__row + .c-score__row { border-top: 1px solid rgba(255, 255, 255, 0.04); }
+.c-score__who { display: flex; align-items: center; gap: 7px; }
+.c-score__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.c-score__name { font-size: 12px; font-weight: 500; color: rgba(247, 241, 227, 0.85); font-family: var(--font-body); }
+.c-score__name--me { font-weight: 700; color: var(--dorado); font-family: var(--font-heading); }
+.c-score__pts { font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--crema); }
+.c-score__pts--me { color: var(--dorado); }
+.c-score__round {
+  margin-top: 8px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  display: flex;
+  justify-content: space-between;
+}
+.c-score__round-n { font-size: 10px; font-weight: 700; color: var(--dorado); font-family: var(--font-heading); }
+.c-score__round-t { font-size: 10px; color: rgba(247, 241, 227, 0.4); }
+
+/* ── ChatPanel ── */
+.c-chat {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+.c-chat__body {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+.c-chat__msg { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.c-chat__msg--me { align-items: flex-end; }
+.c-chat__meta { display: flex; align-items: baseline; gap: 5px; }
+.c-chat__author { font-size: 10px; font-weight: 700; font-family: var(--font-heading); }
+.c-chat__time { font-size: 9px; color: rgba(247, 241, 227, 0.3); }
+.c-chat__bubble {
+  padding: 5px 9px;
+  max-width: 85%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px 10px 10px 3px;
+  font-size: 12px;
+  color: rgba(247, 241, 227, 0.85);
+  line-height: 1.4;
+}
+.c-chat__msg--me .c-chat__bubble {
+  background: rgba(14, 122, 67, 0.3);
+  border-color: rgba(14, 122, 67, 0.4);
+  border-radius: 10px 10px 3px 10px;
+}
+.c-chat__input {
+  margin: 6px 10px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-pill);
+  padding: 6px 10px;
+}
+.c-chat__input input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: var(--crema);
+  font-family: var(--font-body);
+}
+.c-chat__input input::placeholder { color: rgba(247, 241, 227, 0.3); }
+
+/* ── TipsPanel ── */
+.c-tips { display: flex; flex-direction: column; }
+.c-tips__h {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--dorado);
+  font-family: var(--font-heading);
+}
+.c-tips__body { display: flex; flex-direction: column; align-items: center; padding: 12px 14px; gap: 10px; }
+.c-tips__img { width: 120px; height: 110px; object-fit: cover; object-position: top center; }
+.c-tips__bubble {
+  background: var(--crema);
+  border-radius: 10px 10px 10px 3px;
+  padding: 8px 11px;
+  font-size: 12px;
+  color: #1a1a1a;
+  font-family: var(--font-body);
+  line-height: 1.5;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  align-self: stretch;
+}
+.c-tips__dots { display: flex; gap: 5px; }
+.c-tips__dot { width: 6px; height: 6px; border-radius: 3px; background: rgba(212, 175, 55, 0.25); transition: all 0.25s ease; }
+.c-tips__dot--on { width: 14px; background: var(--dorado); }
+
+/* ── MesaInfoPanel ── */
+.c-mesa { padding: 12px 14px; }
+.c-mesa__title { font-family: var(--font-heading); font-size: 14px; font-weight: 800; color: var(--crema); margin-bottom: 4px; }
+.c-mesa__sub { font-size: 11px; color: rgba(247, 241, 227, 0.5); margin-bottom: 10px; font-family: var(--font-body); }
+.c-mesa__row { display: flex; align-items: center; gap: 6px; }
+.c-mesa__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); }
+.c-mesa__online { font-size: 11px; color: rgba(247, 241, 227, 0.7); font-family: var(--font-body); }
+.c-mesa__count { margin-left: auto; font-size: 11px; color: rgba(247, 241, 227, 0.4); }
+.c-mesa__foot {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.c-mesa__foot-k { font-size: 10px; color: rgba(247, 241, 227, 0.4); font-family: var(--font-body); }
+.c-mesa__foot-v { font-family: var(--font-heading); font-size: 16px; font-weight: 900; color: var(--dorado); }
+
+/* ── GameTable shell layout ── */
+.s-game { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background: var(--negro); }
+.s-game__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.9);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  flex-shrink: 0;
+}
+.s-game__header-l { display: flex; align-items: center; gap: 14px; }
+.s-game__round {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 12px;
+  color: rgba(212, 175, 55, 0.6);
+  letter-spacing: 0.1em;
+}
+.s-game__header-r { display: flex; gap: 8px; align-items: center; }
+.s-game__icbtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(247, 241, 227, 0.6);
+  font-size: 13px;
+  cursor: pointer;
+}
+.s-game__body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+.s-game__side-l {
+  width: 200px;
+  padding: 10px 8px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.s-game__side-r {
+  width: 230px;
+  padding: 10px 12px 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.s-game__center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 8px 6px;
+  min-height: 0;
+}
+/* Phaser mounts here in Bloque C (TableScene: wood, chain, drop zones,
+   opponents, hand dock, Pollona overlay). */
+.s-game__canvas {
+  flex: 1;
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.6), 0 8px 32px rgba(0, 0, 0, 0.5);
+  background-image: url("/assets/wood-texture.png");
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-game__canvas-ph {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-style: italic;
+  font-size: 28px;
+  background: linear-gradient(135deg, #C9A227, #F7E08A);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.7));
+  text-align: center;
+}
+.s-game__canvas-note {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(247, 241, 227, 0.35);
+  font-family: var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
