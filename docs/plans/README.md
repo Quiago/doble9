@@ -39,10 +39,28 @@ ADR en `/docs/adr/` + update de `/contracts/` + update de `/CLAUDE.md`.
 
 ## Git
 
-- Rama por agente: `arch/*`, `fe/*`, `be/*`.
-- `main` protegida. El Architect revisa y mergea.
-- Commits convencionales: `feat(fe): ...`, `feat(be): ...`, `chore(arch): ...`.
-- Mensaje de commit termina con la línea Co-Authored-By correspondiente.
+### Topología de worktrees (OBLIGATORIO — 1 dir por agente)
+
+Las 3 sesiones **NO comparten working directory** (eso corrompía el HEAD).
+Cada agente trabaja SOLO en su worktree y SOLO en su rama:
+
+| Terminal | Directorio | Rama | Quién |
+|----------|-----------|------|-------|
+| Architect | `/home/quiala/Datos/Proyectos/doble9` | `main` | integra/revisa |
+| Backend | `/home/quiala/Datos/Proyectos/doble9-be` | `be/work` | Backend |
+| Frontend | `/home/quiala/Datos/Proyectos/doble9-fe` | `fe/work` | Frontend |
+
+- Ningún agente hace `git checkout` de otra rama ni `cd` a otro worktree.
+  Git impide que dos worktrees usen la misma rama (seguridad nativa).
+- Setup por worktree (deps están gitignored, no se copian): Backend
+  `cp .env.example .env && make install`; Frontend
+  `cp .env.example .env.local && npm install`.
+- Integración: cada agente commitea en su rama; el **Architect** hace
+  `git merge be/work` / `git merge fe/work` en `main` desde el repo
+  primario, revisando boundaries y contratos.
+- `main` protegida (solo merges del Architect). Commits convencionales:
+  `feat(fe): …`, `feat(be): …`, `chore(arch): …`. Mensaje termina con la
+  línea Co-Authored-By.
 
 ### REGLA OBLIGATORIA — commit + changelog tras cada cambio
 

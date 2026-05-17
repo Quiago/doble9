@@ -49,6 +49,12 @@ cambio".
 
 #### Added
 - `docs/adr/ADR-006-ws-namespace-and-integration-rulings.md`.
+- **Topología git worktrees** (corrige el working dir compartido que
+  corrompía el HEAD): repo primario `=main` (Architect),
+  `../doble9-be=be/work`, `../doble9-fe=fe/work`. Ramas mal etiquetadas
+  (`arch/fase-0`, `be/fase-1`, `fe/fase-2`) eliminadas; historia integrada
+  consolidada en `main` (bf2ba75 = arch + BE A–F + FE A–B + ADR-006).
+  Documentado en `docs/plans/README.md` → Topología de worktrees.
 
 ### Frontend
 - _Sin cambios aún._
