@@ -163,6 +163,12 @@ class MatchStateMachine:
     def _turn_deadline(self) -> int:
         return self._now_ms() + self._turn_ms
 
+    @property
+    def mandatory_tile(self) -> Tile | None:
+        """The tile a move is currently forced to (round-1 opening 9-9),
+        else None. Read-only view for the bot/match service."""
+        return self._mandatory_tile
+
     def _seat_of(self, user_id: str) -> Seat | None:
         for seat, p in self.players.items():
             if p.user_id == user_id:

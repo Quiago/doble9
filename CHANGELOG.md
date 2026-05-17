@@ -66,6 +66,17 @@ cambio".
   `migrations/env.py` ahora apunta a `Base.metadata` (handoff Architect).
 - 15 tests nuevos (config/security/models/redis); total 59, `make check`
   verde.
+- Bot heurístico (Bloque E, desbloquea single-player M1):
+  `src/services/bot_service.py` — `choose_play` puro (mano+tablero →
+  jugada|paso, respeta apertura obligatoria, dificultades EASY/NORMAL/
+  HARD) y `bot_take_turn(sm, seat)` que conduce `MatchStateMachine`
+  (toda jugada sigue validada por el motor autoritativo).
+- Scaffold RL Fase 2 en `src/bots/` (`environment.py` Gym
+  `CubanDoubleNine-v0`, `agent.py`, `train.py`) — stubs sin imports
+  pesados, deps en extra opcional `[rl]`.
+- `MatchStateMachine.mandatory_tile` (propiedad de solo lectura) para el
+  bot/match service.
+- 8 tests nuevos de bot; total 67, `make check` verde.
 
 #### Changed
 - Hashing de contraseñas: `passlib[bcrypt]` → `bcrypt` directo
