@@ -77,6 +77,25 @@ cambio".
 - `MatchStateMachine.mandatory_tile` (propiedad de solo lectura) para el
   bot/match service.
 - 8 tests nuevos de bot; total 67, `make check` verde.
+- API REST (Bloque C, sigue `contracts/openapi.yml`): 11 endpoints —
+  `auth` (register/login/me, JWT bearer), `matches` (create/get/join,
+  snapshot vía Redis), `users` (stats/history), `store` (items/purchase),
+  `leaderboard`. DTOs Pydantic camelCase 1:1 con el contrato.
+- Capa de repositorios (`src/repositories/`): Protocols + impl
+  SQLAlchemy (prod) + impl en memoria (tests/dev M1 sin Postgres).
+- `src/main.py` FastAPI app: routers, CORS, manejador de errores con
+  forma `ApiError` (`{code,message}`), lifespan que cierra el engine,
+  `/health`. (WS python-socketio se monta aquí en Bloque D.)
+- `src/services/match_service.py` (generador de room code sin
+  caracteres ambiguos).
+- 9 tests de API vía `TestClient` + dependency overrides; total 76,
+  `make check` verde.
+
+#### Changed
+- `core/config.py`: valores por defecto (espejo de `.env.example`) en
+  `DATABASE_URL`/`REDIS_URL`/`SECRET_KEY` para que la app importe sin
+  `.env` en dev/CI; el entorno real sigue teniendo prioridad. Sin
+  impacto en contratos.
 
 #### Changed
 - Hashing de contraseñas: `passlib[bcrypt]` → `bcrypt` directo

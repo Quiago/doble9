@@ -22,12 +22,16 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    # Persistence
-    database_url: str = Field(alias="DATABASE_URL")
-    redis_url: str = Field(alias="REDIS_URL")
+    # Persistence — defaults mirror `.env.example` so the app imports
+    # without a .env (dev / CI); real env overrides in every other case.
+    database_url: str = Field(
+        default="postgresql+asyncpg://doble9s:doble9s@localhost:5432/doble9s",
+        alias="DATABASE_URL",
+    )
+    redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
 
     # Auth (JWT)
-    secret_key: str = Field(alias="SECRET_KEY")
+    secret_key: str = Field(default="change-me-in-production", alias="SECRET_KEY")
     algorithm: str = Field(default="HS256", alias="ALGORITHM")
     access_token_expire_minutes: int = Field(
         default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES"
