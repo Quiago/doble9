@@ -44,4 +44,15 @@ cambio".
 - _Sin cambios aún._
 
 ### Backend
-- _Sin cambios aún._
+
+#### Added
+- Núcleo del juego server-authoritative en `backend/src/game/` (Bloque A,
+  sin deps de red/BD): `tile.py` (set doble-9 = 55 fichas, id canónico
+  `low-high`), `board.py` (cadena de dos extremos, serializa al contrato
+  `Board`), `rules.py` (reparto 10+15, equipos 0&2 vs 1&3, jugadas
+  legales, tranque), `scoring.py` (conteo, DOUBLE_9/CAPICUA/POLLONA),
+  `state_machine.py` (`MatchStateMachine` LOBBY→…→FINISHED, `play_tile`/
+  `pass_turn` autoritativos, snapshot `GameState` con mano privada).
+- `backend/tests/` — 44 tests de reglas/scoring/máquina de estados;
+  `make check` verde (ruff + mypy strict + pytest).
+- `backend/README.md` (faltaba; `pyproject.toml` lo referenciaba).
