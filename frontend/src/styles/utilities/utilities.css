@@ -1,0 +1,16 @@
+/* utilities/utilities.css — single-purpose helpers (BEM `.u-`, `@mobile`). */
+.u-text-center { text-align: center; }
+.u-uppercase { text-transform: uppercase; }
+.u-hidden { display: none !important; }
+.u-full-width { width: 100% !important; }
+.u-no-select { user-select: none; -webkit-user-select: none; }
+
+/* Mobile breakpoint = 768px (touch / phone-first). */
+@media (max-width: 768px) {
+  .u-hidden\@mobile { display: none !important; }
+  .u-full-width\@mobile { width: 100% !important; }
+}
+
+@media (min-width: 769px) {
+  .u-hidden\@desktop { display: none !important; }
+}

@@ -1,0 +1,23 @@
+/* phaser/phaser.css — styles for the Phaser host + DOM overlays drawn over
+   the canvas (Pollona bubble, Manolito taunt). The board itself is canvas.
+   AGENT: Frontend — see ADR-002 (Phaser↔React boundary). */
+.c-game-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--negro);
+}
+.c-game-canvas canvas {
+  display: block;
+  touch-action: none; /* Phaser owns pointer/drag gestures */
+}
+
+/* React overlay layer above the canvas; pointer-events pass through by default. */
+.c-game-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.c-game-overlay > * { pointer-events: auto; }

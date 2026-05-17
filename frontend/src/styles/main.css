@@ -1,0 +1,12 @@
+/* main.css — ITCSS import manifest. Order matters: low→high specificity.
+   AGENT: Frontend. settings → tools → generic → elements → objects →
+   components → utilities → phaser. */
+@import "./settings/tokens.css";
+@import "./settings/fonts.css";
+@import "./tools/animations.css";
+@import "./generic/reset.css";
+@import "./elements/base.css";
+@import "./objects/layout.css";
+@import "./components/index.css";
+@import "./utilities/utilities.css";
+@import "./phaser/phaser.css";

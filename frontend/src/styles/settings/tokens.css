@@ -1,0 +1,68 @@
+/* settings/tokens.css — AUTHORITATIVE design tokens.
+   AGENT: Frontend. Source: docs/plans/design-system.md (wins over CLAUDE.md §3
+   where they differ, per ADR-005). Phaser reads these via getComputedStyle. */
+:root {
+  /* ── Colors (Doble 9's.html :root + shared.jsx C) ── */
+  --negro: #0D0D0D;            /* app bg — NOT #000000 */
+  --madera: #3A2416;
+  --dorado: #D4AF37;
+  --dorado-claro: #F2D27A;
+  --dorado-dark: #A8892A;
+  --crema: #F7F1E3;
+  --verde: #0E7A43;            /* actions / active turn */
+  --verde-light: #12A356;
+  --error: #E74C3C;            /* destructive — NOT #C0392B */
+  --panel: rgba(0, 0, 0, 0.72);
+  --border-gold: rgba(212, 175, 55, 0.25);
+  --border-gold-strong: rgba(212, 175, 55, 0.45);
+
+  /* Canonical gold gradients (logo = 4-stop, button = 3-stop, per shared.jsx) */
+  --grad-gold-logo: linear-gradient(135deg, #C9A227 0%, #F7E08A 40%, #C9A227 70%, #F2D27A 100%);
+  --grad-gold-btn: linear-gradient(135deg, #C9A227 0%, #F2D27A 50%, #C9A227 100%);
+
+  /* ── Pips — spherical 3-stop (DominoTile.jsx). Use as
+     radial-gradient(circle at 36% 30%, var(--pip-N-h) 0%, var(--pip-N-b) 52%, var(--pip-N-s) 100%) ── */
+  --pip-1-b: #CC3828; --pip-1-h: #E06055; --pip-1-s: #9E2A1E;
+  --pip-2-b: #2A7EC0; --pip-2-h: #50A0D8; --pip-2-s: #1A5C96;
+  --pip-3-b: #22A850; --pip-3-h: #40BF6A; --pip-3-s: #168038;
+  --pip-4-b: #D88810; --pip-4-h: #ECB040; --pip-4-s: #A8680A;
+  --pip-5-b: #7E3E9E; --pip-5-h: #9C5CB8; --pip-5-s: #5C2878;
+  --pip-6-b: #C86018; --pip-6-h: #E08840; --pip-6-s: #9A4810;
+  --pip-7-b: #129880; --pip-7-h: #2CB89A; --pip-7-s: #0C7060;
+  --pip-8-b: #C41450; --pip-8-h: #DC4474; --pip-8-s: #98103C;
+  --pip-9-b: #273848; --pip-9-h: #3C5060; --pip-9-s: #182430;
+
+  /* ── Tile (DominoTile.jsx) ── */
+  --tile-body: linear-gradient(158deg, #F9F0DA 0%, #F1E3C2 55%, #E8D8AE 100%);
+  --tile-back: linear-gradient(150deg, #1C1C1C, #111);
+  --tile-divider: rgba(50, 38, 22, 0.2);
+  --tile-radius: 10px;
+  --tile-w: 60px;
+  --tile-h: 120px;
+
+  /* ── Typography ── */
+  --font-heading: "Montserrat", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-logo: "Montserrat", system-ui, sans-serif; /* 900 italic + gold gradient */
+
+  /* ── Spacing (8px grid, CLAUDE.md §3.1) ── */
+  --space-unit: 8px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-6: 24px; --space-8: 32px;
+  --space-12: 48px; --space-16: 64px;
+
+  /* ── Radius ── */
+  --radius-sm: 4px;  --radius-md: 8px;
+  --radius-lg: 16px; --radius-pill: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-tile: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --shadow-gold-glow: 0 0 20px rgba(212, 175, 55, 0.4);
+  --shadow-gold-btn: 0 4px 20px rgba(212, 175, 55, 0.4);
+  --shadow-green-glow: 0 4px 20px rgba(14, 122, 67, 0.4);
+
+  /* ── Misc ── */
+  --blur-glass: blur(12px);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}

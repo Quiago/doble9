@@ -1,0 +1,12 @@
+/* tools/animations.css — @keyframes ported LITERAL from Doble 9's.html.
+   AGENT: Frontend. Do not retune values; this is the pixel-perfect target. */
+@keyframes screenFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes splashLogo   { 0% { opacity: 0; transform: scale(0.78); } 65% { transform: scale(1.07); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes float        { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes turnPulse    { 0%, 100% { box-shadow: 0 0 0 2.5px #0E7A43, 0 0 14px rgba(14, 122, 67, 0.5); } 50% { box-shadow: 0 0 0 3.5px #0E7A43, 0 0 28px rgba(14, 122, 67, 0.8); } }
+@keyframes pollonaShake { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 15% { transform: translate(-6px, 3px) rotate(-1.5deg); } 30% { transform: translate(6px, -3px) rotate(1.5deg); } 45% { transform: translate(-4px, 4px) rotate(-0.8deg); } 60% { transform: translate(4px, -2px) rotate(0.8deg); } }
+@keyframes pollonaFadeIn { from { opacity: 0; transform: scale(0.75) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes pollonaTextIn { 0% { opacity: 0; transform: rotate(-8deg) scale(0.4); } 65% { transform: rotate(-8deg) scale(1.14); } 100% { opacity: 1; transform: rotate(-8deg) scale(1); } }
+@keyframes coinFall     { 0% { opacity: 1; transform: translateY(-30px) rotate(0deg) scale(1); } 100% { opacity: 0; transform: translateY(160px) rotate(500deg) scale(0.4); } }
+@keyframes resultSlideIn { from { opacity: 0; transform: translateY(40px) scale(0.88); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes shimmer      { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }

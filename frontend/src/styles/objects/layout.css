@@ -1,0 +1,20 @@
+/* objects/layout.css — structural, classed layout patterns (BEM `.o-`). */
+.o-screen {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--negro);
+  animation: screenFadeIn 0.3s ease;
+}
+
+.o-flex { display: flex; }
+.o-flex--center { display: flex; align-items: center; justify-content: center; }
+.o-flex--col { display: flex; flex-direction: column; }
+.o-flex--between { display: flex; align-items: center; justify-content: space-between; }
+
+.o-grid { display: grid; }
+.o-grid--center { display: grid; place-items: center; }
+
+.o-fill { flex: 1 1 auto; min-height: 0; }
