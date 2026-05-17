@@ -7,14 +7,18 @@ info:
     shared/types/game.d.ts. Reconnect semantics: see ADR-004. Any change
     requires an ADR. Lint: `npx @asyncapi/cli validate contracts/websocket.yml`.
 
+# ARCHITECT RULING (ADR-006): "/game" is the Socket.IO NAMESPACE, NOT the
+# Engine.IO transport path. Engine.IO path stays the default `/socket.io`.
+# Client: io(`${origin}/game`, { path: "/socket.io" }). Server: register
+# handlers + emit on namespace "/game"; do NOT set socketio_path.
 servers:
   local:
     host: localhost:8000
-    pathname: /game
+    pathname: /socket.io
     protocol: ws
   production:
     host: api.doble9s.com
-    pathname: /game
+    pathname: /socket.io
     protocol: wss
 
 defaultContentType: application/json
@@ -23,8 +27,10 @@ channels:
   game:
     address: /game
     description: >
-      Single Socket.IO namespace. Clients join room `match:{matchId}`.
-      Every server message carries `{ event, matchId, payload, timestamp }`.
+      Socket.IO **namespace** `/game` (Engine.IO path = default
+      `/socket.io`). Clients connect to namespace `/game` and join room
+      `match:{matchId}`. Every server message carries
+      `{ event, matchId, payload, timestamp }`.
     messages:
       # ── Client -> Server ──────────────────────────────────────────────
       join_lobby:        { $ref: "#/components/messages/JoinLobby" }

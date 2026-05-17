@@ -39,6 +39,16 @@ cambio".
   el bundle React-DOM pasa a ser objetivo visual, no se porta tal cual.
 - `CLAUDE.md §3/§7` superado por `docs/plans/design-system.md` y ADR-005
   en lo visual y en el schema (no se reescribe `CLAUDE.md`, ver ADR-005).
+- **Fallo ADR-006 (revisión de avance BE+FE):** `/game` es **namespace**
+  Socket.IO, no path Engine.IO (default `/socket.io`). `websocket.yml`
+  congelado: `servers.pathname → /socket.io` + descripción aclarada.
+  Único bloqueante FE↔BE: FE ya conforme; BE requiere fix pequeño
+  (`main.py` quita `socketio_path`, `gateway.py` usa `namespace="/game"`).
+  Puntos 2–4 (substitución por bot, seating M2, CAPICUA/POLLONA) ratificados
+  sin rework.
+
+#### Added
+- `docs/adr/ADR-006-ws-namespace-and-integration-rulings.md`.
 
 ### Frontend
 - _Sin cambios aún._
