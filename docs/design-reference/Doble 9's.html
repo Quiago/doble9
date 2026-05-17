@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doble 9's — Prototype</title>
+<style>
+@font-face { font-family:'Inter'; src:url('./fonts/Inter-VariableFont_opsz_wght.ttf') format('truetype'); font-weight:100 900; font-style:normal; font-display:swap; }
+@font-face { font-family:'Inter'; src:url('./fonts/Inter-Italic-VariableFont_opsz_wght.ttf') format('truetype'); font-weight:100 900; font-style:italic; font-display:swap; }
+@font-face { font-family:'Montserrat'; src:url('./fonts/Montserrat-VariableFont_wght.ttf') format('truetype'); font-weight:100 900; font-style:normal; font-display:swap; }
+@font-face { font-family:'Montserrat'; src:url('./fonts/Montserrat-Italic-VariableFont_wght.ttf') format('truetype'); font-weight:100 900; font-style:italic; font-display:swap; }
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; }
+body { background:#0D0D0D; color:#F7F1E3; font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+
+:root {
+  --dorado:#D4AF37; --dorado-claro:#F2D27A; --negro:#0D0D0D;
+  --madera:#3A2416; --crema:#F7F1E3; --verde:#0E7A43;
+}
+
+/* Animations */
+@keyframes screenFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes splashLogo   { 0%{opacity:0;transform:scale(0.78)} 65%{transform:scale(1.07)} 100%{opacity:1;transform:scale(1)} }
+@keyframes float        { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+@keyframes turnPulse    { 0%,100%{box-shadow:0 0 0 2.5px #0E7A43,0 0 14px rgba(14,122,67,0.5)} 50%{box-shadow:0 0 0 3.5px #0E7A43,0 0 28px rgba(14,122,67,0.8)} }
+@keyframes pollonaShake { 0%,100%{transform:translate(0,0) rotate(0deg)} 15%{transform:translate(-6px,3px) rotate(-1.5deg)} 30%{transform:translate(6px,-3px) rotate(1.5deg)} 45%{transform:translate(-4px,4px) rotate(-0.8deg)} 60%{transform:translate(4px,-2px) rotate(0.8deg)} }
+@keyframes pollonaFadeIn{ from{opacity:0;transform:scale(0.75) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes pollonaTextIn{ 0%{opacity:0;transform:rotate(-8deg) scale(0.4)} 65%{transform:rotate(-8deg) scale(1.14)} 100%{opacity:1;transform:rotate(-8deg) scale(1)} }
+@keyframes coinFall     { 0%{opacity:1;transform:translateY(-30px) rotate(0deg) scale(1)} 100%{opacity:0;transform:translateY(160px) rotate(500deg) scale(0.4)} }
+@keyframes resultSlideIn{ from{opacity:0;transform:translateY(40px) scale(0.88)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes shimmer      { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(212,175,55,0.3); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(212,175,55,0.5); }
+
+input[type=range] { -webkit-appearance:none; appearance:none; height:4px; background:rgba(255,255,255,0.12); border-radius:9999px; outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#D4AF37; cursor:pointer; box-shadow:0 2px 8px rgba(212,175,55,0.4); }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Design system components -->
+<script type="text/babel" src="./DominoTile.jsx"></script>
+<script type="text/babel" src="./GamePanels.jsx"></script>
+
+<!-- Shared UI -->
+<script type="text/babel" src="./screens/shared.jsx"></script>
+
+<!-- All screens -->
+<script type="text/babel" src="./screens/splash-landing.jsx"></script>
+<script type="text/babel" src="./screens/main-menu.jsx"></script>
+<script type="text/babel" src="./screens/setup-lobby.jsx"></script>
+<script type="text/babel" src="./screens/game-screen.jsx"></script>
+<script type="text/babel" src="./screens/tutorial.jsx"></script>
+<script type="text/babel" src="./screens/profile-settings.jsx"></script>
+<script type="text/babel" src="./screens/store.jsx"></script>
+<script type="text/babel" src="./screens/results-league.jsx"></script>
+<script type="text/babel" src="./screens/tournament.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+/* ── App Router ───────────────────────────────────────────────────────────── */
+const SCREEN_MAP = {
+  splash:     () => window.SplashScreen,
+  landing:    () => window.LandingScreen,
+  menu:       () => window.MainMenuScreen,
+  setup:      () => window.SetupScreen,
+  lobby:      () => window.LobbyScreen,
+  game:       () => window.GameScreen,
+  tutorial:   () => window.TutorialScreen,
+  profile:    () => window.ProfileScreen,
+  settings:   () => window.SettingsScreen,
+  store:      () => window.StoreScreen,
+  results:    () => window.ResultsScreen,
+  league:     () => window.LeagueScreen,
+  tournament: () => window.TournamentScreen,
+};
+
+const SCREEN_LABELS = {
+  splash:'Splash', landing:'Landing', menu:'Menú Principal',
+  setup:'Config. Partida', lobby:'Lobby Multi', game:'Mesa de Juego',
+  tutorial:'Tutorial', profile:'Perfil', settings:'Ajustes',
+  store:'Tienda', results:'Resultados', league:'Liga', tournament:'Torneo',
+};
+
+function App() {
+  const [screen, setScreen] = React.useState('splash');
+  const [params, setParams] = React.useState({});
+  const [navOpen, setNavOpen] = React.useState(false);
+
+  const navigate = React.useCallback((to, p = {}) => {
+    setScreen(to);
+    setParams(p);
+    setNavOpen(false);
+  }, []);
+
+  const Current = SCREEN_MAP[screen]?.();
+  if (!Current) return <div style={{color:'#F7F1E3',padding:40,fontFamily:'Montserrat,sans-serif'}}>Pantalla no encontrada: {screen}</div>;
+
+  return (
+    <div style={{ height:'100vh', overflow:'hidden', position:'relative' }}>
+      <Current key={screen} navigate={navigate} params={params} />
+      <DevNav screen={screen} navOpen={navOpen} setNavOpen={setNavOpen} navigate={navigate} />
+    </div>
+  );
+}
+
+/* ── Dev Navigation ───────────────────────────────────────────────────────── */
+function DevNav({ screen, navOpen, setNavOpen, navigate }) {
+  const screens = Object.keys(SCREEN_MAP);
+  const groups = [
+    { label:'Acceso',    ids:['splash','landing','menu'] },
+    { label:'Partida',   ids:['setup','lobby','game'] },
+    { label:'Contenido', ids:['tutorial','profile','settings','store'] },
+    { label:'Social',    ids:['results','league','tournament'] },
+  ];
+
+  return (
+    <>
+      {navOpen && (
+        <div style={{
+          position:'fixed', bottom:68, right:14, zIndex:9999,
+          background:'rgba(10,10,10,0.97)', border:'1px solid rgba(212,175,55,0.25)',
+          borderRadius:16, padding:'14px 12px', backdropFilter:'blur(20px)',
+          boxShadow:'0 16px 48px rgba(0,0,0,0.8)', minWidth:220,
+          animation:'screenFadeIn 0.2s ease',
+        }}>
+          <div style={{ fontFamily:'Montserrat,sans-serif', fontWeight:900, fontSize:10, letterSpacing:'0.18em', color:'rgba(212,175,55,0.5)', textTransform:'uppercase', marginBottom:10, paddingLeft:4 }}>
+            NAVEGAR PANTALLAS
+          </div>
+          {groups.map(g => (
+            <div key={g.label} style={{ marginBottom:10 }}>
+              <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.14em', color:'rgba(247,241,227,0.25)', fontFamily:'Montserrat,sans-serif', textTransform:'uppercase', marginBottom:5, paddingLeft:4 }}>{g.label}</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+                {g.ids.map(id => (
+                  <button key={id} onClick={() => navigate(id)} style={{
+                    padding:'7px 12px', borderRadius:9, textAlign:'left', cursor:'pointer',
+                    background: screen===id ? 'rgba(212,175,55,0.18)' : 'transparent',
+                    border: screen===id ? '1px solid rgba(212,175,55,0.4)' : '1px solid transparent',
+                    color: screen===id ? '#D4AF37' : 'rgba(247,241,227,0.65)',
+                    fontFamily:'Montserrat,sans-serif', fontWeight: screen===id ? 800 : 600,
+                    fontSize:12, letterSpacing:'0.03em', transition:'all 0.12s',
+                  }}
+                  onMouseEnter={e => screen!==id && (e.currentTarget.style.background='rgba(255,255,255,0.05)')}
+                  onMouseLeave={e => screen!==id && (e.currentTarget.style.background='transparent')}
+                  >
+                    {SCREEN_LABELS[id]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Toggle button */}
+      <button onClick={() => setNavOpen(o => !o)} style={{
+        position:'fixed', bottom:14, right:14, zIndex:9999,
+        width:46, height:46, borderRadius:'50%', border:'none', cursor:'pointer',
+        background: navOpen ? '#D4AF37' : 'linear-gradient(135deg,#C9A227,#F2D27A)',
+        color:'#0D0D0D', fontSize:20, fontWeight:900,
+        boxShadow:`0 4px 20px rgba(212,175,55,${navOpen?0.7:0.4})`,
+        transition:'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+        transform: navOpen ? 'rotate(45deg) scale(1.05)' : 'scale(1)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontFamily:'Montserrat,sans-serif',
+      }}>
+        {navOpen ? '✕' : '≡'}
+      </button>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

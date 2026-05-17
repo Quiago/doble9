@@ -1,0 +1,430 @@
+openapi: 3.1.0
+info:
+  title: Doble 9's REST API
+  version: 1.0.0
+  description: >
+    Authoritative REST surface for Doble 9's. Mirrors shared/types/api.d.ts.
+    Real-time gameplay is in contracts/websocket.yml (AsyncAPI). Any change
+    here requires an ADR. Lint: `npx @redocly/cli lint contracts/openapi.yml`.
+servers:
+  - url: http://localhost:8000
+    description: Local dev
+  - url: https://api.doble9s.com
+    description: Production
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      security: []
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      security: []
+      summary: Authenticate, returns JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Current authenticated user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /matches:
+    post:
+      tags: [matches]
+      summary: Create a match (returns room code)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MatchCreateRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MatchSummary" }
+
+  /matches/{id}:
+    get:
+      tags: [matches]
+      summary: Match state (for reconnects, see ADR-004)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GameState" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /matches/{id}/join:
+    post:
+      tags: [matches]
+      summary: Join a match by room code
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JoinMatchRequest" }
+      responses:
+        "200":
+          description: Joined
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MatchSummary" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /leaderboard:
+    get:
+      tags: [leaderboard]
+      summary: Weekly league standings
+      parameters:
+        - { name: tier, in: query, required: false, schema: { $ref: "#/components/schemas/LeagueTier" } }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 50, maximum: 200 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LeaderboardEntry" }
+
+  /store/items:
+    get:
+      tags: [store]
+      summary: Available store items (owned flag is per-user)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StoreItem" }
+
+  /store/purchase:
+    post:
+      tags: [store]
+      summary: Buy an item with coins
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseResponse" }
+        "402": { $ref: "#/components/responses/Error" }
+
+  /users/{id}/stats:
+    get:
+      tags: [users]
+      summary: Player statistics
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlayerStats" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /users/{id}/history:
+    get:
+      tags: [users]
+      summary: Match history (paginated)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: page, in: query, required: false, schema: { type: integer, default: 1, minimum: 1 } }
+        - { name: pageSize, in: query, required: false, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaginatedMatchHistory" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+
+  schemas:
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+
+    User:
+      type: object
+      required: [id, username, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string, maxLength: 32 }
+        email: { type: [string, "null"], format: email }
+        avatarUrl: { type: [string, "null"] }
+        country: { type: [string, "null"], maxLength: 2 }
+        createdAt: { type: string, format: date-time }
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 32 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier: { type: string, description: username or email }
+        password: { type: string }
+
+    LeagueTier:
+      type: string
+      enum: [Bronze, Silver, Gold, Platinum, Diamond]
+
+    PlayerStats:
+      type: object
+      required: [userId, gamesPlayed, gamesWon, gamesLost, coins, xp, level, leagueTier, leaguePoints]
+      properties:
+        userId: { type: string, format: uuid }
+        gamesPlayed: { type: integer }
+        gamesWon: { type: integer }
+        gamesLost: { type: integer }
+        totalPoints: { type: integer }
+        currentStreak: { type: integer }
+        bestStreak: { type: integer }
+        leagueTier: { $ref: "#/components/schemas/LeagueTier" }
+        leaguePoints: { type: integer }
+        coins: { type: integer }
+        xp: { type: integer }
+        level: { type: integer }
+
+    MatchMode:
+      type: string
+      enum: [solo, multiplayer, tournament]
+
+    MatchStatus:
+      type: string
+      enum: [LOBBY, DEALING, PLAYING, SCORING, FINISHED]
+
+    MatchCreateRequest:
+      type: object
+      required: [mode]
+      properties:
+        mode: { $ref: "#/components/schemas/MatchMode" }
+        targetScore: { type: integer, default: 100 }
+        fillWithBots: { type: boolean, default: false }
+
+    MatchSummary:
+      type: object
+      required: [id, roomCode, mode, status, targetScore, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        roomCode: { type: string, maxLength: 8 }
+        mode: { $ref: "#/components/schemas/MatchMode" }
+        status: { $ref: "#/components/schemas/MatchStatus" }
+        targetScore: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    JoinMatchRequest:
+      type: object
+      required: [roomCode]
+      properties:
+        roomCode: { type: string, maxLength: 8 }
+
+    Scores:
+      type: object
+      required: [teamA, teamB]
+      properties:
+        teamA: { type: integer }
+        teamB: { type: integer }
+
+    GameState:
+      description: Authoritative snapshot. `hand` present only for the recipient.
+      type: object
+      required: [matchId, status, players, board, scores, round, targetScore, boneyardCount, lastActionAt]
+      properties:
+        matchId: { type: string }
+        status: { $ref: "#/components/schemas/MatchStatus" }
+        players:
+          type: array
+          items: { $ref: "#/components/schemas/PublicPlayer" }
+        board: { $ref: "#/components/schemas/Board" }
+        hand: { type: array, items: { type: string }, description: "TileId[] — recipient only" }
+        turn:
+          oneOf:
+            - { $ref: "#/components/schemas/TurnInfo" }
+            - { type: "null" }
+        scores: { $ref: "#/components/schemas/Scores" }
+        round: { type: integer }
+        targetScore: { type: integer }
+        boneyardCount: { type: integer }
+        lastActionAt: { type: integer, description: epoch ms }
+
+    PublicPlayer:
+      type: object
+      required: [seat, userId, name, team, tilesCount, isBot, connected]
+      properties:
+        seat: { type: integer, enum: [0, 1, 2, 3] }
+        userId: { type: string }
+        name: { type: string }
+        team: { type: string, enum: [teamA, teamB] }
+        tilesCount: { type: integer }
+        isBot: { type: boolean }
+        connected: { type: boolean }
+
+    Board:
+      type: object
+      required: [tiles, leftEnd, rightEnd]
+      properties:
+        tiles:
+          type: array
+          items: { $ref: "#/components/schemas/PlacedTile" }
+        leftEnd: { type: [integer, "null"], minimum: 0, maximum: 9 }
+        rightEnd: { type: [integer, "null"], minimum: 0, maximum: 9 }
+
+    PlacedTile:
+      type: object
+      required: [id, ends, order, bySeat]
+      properties:
+        id: { type: string }
+        ends:
+          type: array
+          items: { type: integer, minimum: 0, maximum: 9 }
+          minItems: 2
+          maxItems: 2
+        order: { type: integer }
+        bySeat: { type: integer, enum: [0, 1, 2, 3] }
+
+    TurnInfo:
+      type: object
+      required: [seat, userId, deadline]
+      properties:
+        seat: { type: integer, enum: [0, 1, 2, 3] }
+        userId: { type: string }
+        deadline: { type: integer, description: epoch ms }
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, userId, username, leagueTier, leaguePoints]
+      properties:
+        rank: { type: integer }
+        userId: { type: string, format: uuid }
+        username: { type: string }
+        avatarUrl: { type: [string, "null"] }
+        leagueTier: { $ref: "#/components/schemas/LeagueTier" }
+        leaguePoints: { type: integer }
+
+    StoreItem:
+      type: object
+      required: [key, type, name, description, priceCoins, owned]
+      properties:
+        key: { type: string }
+        type: { type: string, enum: [avatar_skin, board_theme, tile_set, emote] }
+        name: { type: string }
+        description: { type: string }
+        priceCoins: { type: integer }
+        previewUrl: { type: [string, "null"] }
+        owned: { type: boolean }
+
+    PurchaseRequest:
+      type: object
+      required: [itemKey]
+      properties:
+        itemKey: { type: string }
+
+    PurchaseResponse:
+      type: object
+      required: [itemKey, coinsRemaining]
+      properties:
+        itemKey: { type: string }
+        coinsRemaining: { type: integer }
+
+    MatchHistoryEntry:
+      type: object
+      required: [matchId, mode, finalScores, playedAt, result]
+      properties:
+        matchId: { type: string, format: uuid }
+        mode: { $ref: "#/components/schemas/MatchMode" }
+        winnerTeam: { type: [string, "null"], enum: [teamA, teamB, null] }
+        finalScores: { $ref: "#/components/schemas/Scores" }
+        playedAt: { type: string, format: date-time }
+        result: { type: string, enum: [win, loss] }
+
+    PaginatedMatchHistory:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/MatchHistoryEntry" }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }

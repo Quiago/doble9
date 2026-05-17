@@ -1,0 +1,206 @@
+asyncapi: 3.0.0
+info:
+  title: Doble 9's Realtime Gateway
+  version: 1.0.0
+  description: >
+    Socket.IO namespace `/game`. Authoritative gameplay. Mirrors
+    shared/types/game.d.ts. Reconnect semantics: see ADR-004. Any change
+    requires an ADR. Lint: `npx @asyncapi/cli validate contracts/websocket.yml`.
+
+servers:
+  local:
+    host: localhost:8000
+    pathname: /game
+    protocol: ws
+  production:
+    host: api.doble9s.com
+    pathname: /game
+    protocol: wss
+
+defaultContentType: application/json
+
+channels:
+  game:
+    address: /game
+    description: >
+      Single Socket.IO namespace. Clients join room `match:{matchId}`.
+      Every server message carries `{ event, matchId, payload, timestamp }`.
+    messages:
+      # ── Client -> Server ──────────────────────────────────────────────
+      join_lobby:        { $ref: "#/components/messages/JoinLobby" }
+      player_ready:      { $ref: "#/components/messages/PlayerReady" }
+      start_match:       { $ref: "#/components/messages/StartMatch" }
+      play_tile:         { $ref: "#/components/messages/PlayTile" }
+      pass_turn:         { $ref: "#/components/messages/PassTurn" }
+      request_tile:      { $ref: "#/components/messages/RequestTile" }
+      send_chat:         { $ref: "#/components/messages/SendChat" }
+      # ── Server -> Client ──────────────────────────────────────────────
+      game_state:           { $ref: "#/components/messages/GameStateMsg" }
+      tile_placed:          { $ref: "#/components/messages/TilePlaced" }
+      turn_changed:         { $ref: "#/components/messages/TurnChanged" }
+      special_play:         { $ref: "#/components/messages/SpecialPlay" }
+      chat_message:         { $ref: "#/components/messages/ChatMessage" }
+      player_joined:        { $ref: "#/components/messages/PlayerJoined" }
+      player_disconnected:  { $ref: "#/components/messages/PlayerDisconnected" }
+      round_end:            { $ref: "#/components/messages/RoundEnd" }
+      match_end:            { $ref: "#/components/messages/MatchEnd" }
+      error:                { $ref: "#/components/messages/ErrorMsg" }
+
+operations:
+  sendJoinLobby:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/join_lobby" }]
+  sendPlayerReady:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/player_ready" }]
+  sendStartMatch:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/start_match" }]
+  sendPlayTile:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/play_tile" }]
+  sendPassTurn:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/pass_turn" }]
+  sendRequestTile:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/request_tile" }]
+  sendChat:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    messages: [{ $ref: "#/channels/game/messages/send_chat" }]
+  receiveServerEvents:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    messages:
+      - { $ref: "#/channels/game/messages/game_state" }
+      - { $ref: "#/channels/game/messages/tile_placed" }
+      - { $ref: "#/channels/game/messages/turn_changed" }
+      - { $ref: "#/channels/game/messages/special_play" }
+      - { $ref: "#/channels/game/messages/chat_message" }
+      - { $ref: "#/channels/game/messages/player_joined" }
+      - { $ref: "#/channels/game/messages/player_disconnected" }
+      - { $ref: "#/channels/game/messages/round_end" }
+      - { $ref: "#/channels/game/messages/match_end" }
+      - { $ref: "#/channels/game/messages/error" }
+
+components:
+  messages:
+    JoinLobby:
+      name: join_lobby
+      payload:
+        type: object
+        required: [matchId]
+        properties:
+          matchId: { type: string }
+          # Reconnect: client sends last applied anchor; server replays delta (ADR-004).
+          sinceActionAt: { type: integer, description: "epoch ms, optional reconnect anchor" }
+    PlayerReady:
+      name: player_ready
+      payload:
+        type: object
+        required: [matchId, ready]
+        properties:
+          matchId: { type: string }
+          ready: { type: boolean }
+    StartMatch:
+      name: start_match
+      description: Host only.
+      payload:
+        type: object
+        required: [matchId]
+        properties:
+          matchId: { type: string }
+    PlayTile:
+      name: play_tile
+      payload:
+        type: object
+        required: [matchId, tileId, side]
+        properties:
+          matchId: { type: string }
+          tileId: { type: string, description: '"{low}-{high}"' }
+          side: { type: string, enum: [left, right] }
+          rotation: { type: integer, enum: [0, 90] }
+    PassTurn:
+      name: pass_turn
+      payload:
+        type: object
+        required: [matchId]
+        properties:
+          matchId: { type: string }
+    RequestTile:
+      name: request_tile
+      description: Draw from boneyard / request per Cuban rules variant.
+      payload:
+        type: object
+        required: [matchId]
+        properties:
+          matchId: { type: string }
+    SendChat:
+      name: send_chat
+      payload:
+        type: object
+        required: [matchId, message]
+        properties:
+          matchId: { type: string }
+          message: { type: string, maxLength: 240 }
+
+    GameStateMsg:
+      name: game_state
+      description: Full authoritative snapshot. Sent on join, reconnect, and major transitions. `payload` follows GameState in shared/types/game.d.ts.
+      payload:
+        $ref: "#/components/schemas/ServerEnvelope"
+    TilePlaced:
+      name: tile_placed
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    TurnChanged:
+      name: turn_changed
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    SpecialPlay:
+      name: special_play
+      description: "payload.type ∈ DOUBLE_9 | CAPICUA | POLLONA — drives FE celebration."
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    ChatMessage:
+      name: chat_message
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    PlayerJoined:
+      name: player_joined
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    PlayerDisconnected:
+      name: player_disconnected
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    RoundEnd:
+      name: round_end
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    MatchEnd:
+      name: match_end
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    ErrorMsg:
+      name: error
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
+
+  schemas:
+    ServerEnvelope:
+      type: object
+      required: [event, matchId, payload, timestamp]
+      description: >
+        Every server->client message. `payload` shape is determined by
+        `event`; canonical TS definitions live in shared/types/game.d.ts
+        (TilePlacedPayload, TurnChangedPayload, SpecialPlayPayload,
+        ChatMessagePayload, RoundEndPayload, MatchEndPayload,
+        PlayerDisconnectedPayload, ErrorPayload, GameState).
+      properties:
+        event:
+          type: string
+          enum: [game_state, tile_placed, turn_changed, special_play,
+                 chat_message, player_joined, player_disconnected,
+                 round_end, match_end, error]
+        matchId: { type: string }
+        payload: { type: object, additionalProperties: true }
+        timestamp: { type: integer, description: epoch ms, server clock }

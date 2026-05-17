@@ -1,0 +1,42 @@
+# Doble 9's — infra local (Postgres 16 + Redis 7).
+# Vive en /backend para que `make infra-up` (cwd /backend) lo encuentre sin -f.
+# Coincide con CLAUDE.md §9 (backend/docker-compose.yml) y con backend/.env.example.
+name: doble9s
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: doble9s-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-doble9s}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-doble9s}
+      POSTGRES_DB: ${POSTGRES_DB:-doble9s}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doble9s} -d ${POSTGRES_DB:-doble9s}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: doble9s-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,43 @@
+name: frontend-ci
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+  pull_request:
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # No-op until the Frontend agent commits frontend/package.json.
+      - name: Guard — skip if project not initialized
+        id: guard
+        working-directory: .
+        run: |
+          if [ -f frontend/package.json ]; then echo "ready=true" >> "$GITHUB_OUTPUT";
+          else echo "ready=false" >> "$GITHUB_OUTPUT"; echo "frontend/ not initialized yet — skipping"; fi
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.ready == 'true'
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        if: steps.guard.outputs.ready == 'true'
+        run: npm ci
+      - name: Lint
+        if: steps.guard.outputs.ready == 'true'
+        run: npm run lint
+      - name: Test
+        if: steps.guard.outputs.ready == 'true'
+        run: npm run test
+      - name: Build
+        if: steps.guard.outputs.ready == 'true'
+        run: npm run build
