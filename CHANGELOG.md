@@ -90,8 +90,27 @@ cambio".
   caracteres ambiguos).
 - 9 tests de API vía `TestClient` + dependency overrides; total 76,
   `make check` verde.
+- Gateway tiempo real (Bloque D, sigue `websocket.yml` + ADR-004):
+  `src/ws/runtime.py` `MatchRuntime` (envuelve la máquina de estados,
+  conduce bots, buffer ordenado de eventos, reconexión delta/snapshot,
+  dedup por `clientId`, substitución por bot al expirar la gracia de
+  desconexión), `registry.py` (runtimes solo M1), `gateway.py`
+  (Socket.IO `/game`, rooms `match:{id}`, handlers finos). `main.py`
+  monta ASGI combinado (Socket.IO path `/game` + FastAPI).
+- 8 tests de runtime WS; total 84, `make check` verde.
+
+#### Fixed
+- Salida de ronda 1: la regla "quien tiene el 9-9 abre" fallaba cuando
+  el 9-9 cae en el pozo (15/55 ≈ 27%, `ValueError`). Generalizado a la
+  regla cubana real: **abre el doble más alto** (`rules.opening_move`);
+  9-9 es solo el tope de ese orden. Sin doble repartido → asiento 0
+  abre libre. Bug del núcleo (Bloque A) detectado por los tests de D.
 
 #### Changed
+- `pyproject.toml`: overrides mypy para `socketio.*`
+  (`ignore_missing_imports`) y para `src.ws.gateway`
+  (`disallow_untyped_decorators=false`, decoradores de Socket.IO sin
+  tipos). El resto del código sigue en strict total.
 - `core/config.py`: valores por defecto (espejo de `.env.example`) en
   `DATABASE_URL`/`REDIS_URL`/`SECRET_KEY` para que la app importe sin
   `.env` en dev/CI; el entorno real sigue teniendo prioridad. Sin

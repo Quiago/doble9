@@ -12,6 +12,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+import socketio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -21,6 +22,9 @@ from src.api import auth, leaderboard, matches, store, users
 from src.core.config import get_settings
 from src.core.db import dispose_engine
 from src.core.middleware import add_cors
+from src.core.redis import RedisMatchStore
+from src.ws.gateway import build_gateway
+from src.ws.registry import MatchRegistry
 
 _STATUS_CODE = {
     400: "bad_request",
@@ -79,4 +83,16 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+fastapi_app = create_app()
+
+# Realtime gateway (Block D). Socket.IO is served at path `/game`
+# (websocket.yml `pathname: /game`); REST is delegated to FastAPI.
+# NOTE (Architect/FE): websocket.yml names `/game` as both pathname and
+# namespace — here `/game` is the Engine.IO path with the default
+# namespace. FE `services/websocket.ts` must match. Flag if a real
+# Socket.IO namespace `/game` is required instead.
+_registry = MatchRegistry(store=RedisMatchStore())
+_sio = build_gateway(_registry, get_settings())
+
+app = socketio.ASGIApp(_sio, other_asgi_app=fastapi_app, socketio_path="game")
+

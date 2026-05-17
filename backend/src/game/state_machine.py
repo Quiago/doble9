@@ -25,10 +25,10 @@ from src.game.rules import (
     Seat,
     Team,
     deal,
-    double_nine_holder,
     has_legal_move,
     is_blocked,
     next_seat,
+    opening_move,
     opponent_team,
     seats_of,
     team_of,
@@ -192,8 +192,7 @@ class MatchStateMachine:
         self._passes_in_row = 0
         self._last_placed_seat = None
         if self.round == 1:
-            self.turn_seat = double_nine_holder(self.hands)
-            self._mandatory_tile = DOUBLE_NINE
+            self.turn_seat, self._mandatory_tile = opening_move(self.hands)
         else:
             assert opener is not None
             self.turn_seat = opener
@@ -218,7 +217,10 @@ class MatchStateMachine:
         if tile not in self.hands[seat]:
             return Result.error(f"tile {tile_id} not in hand")
         if self._mandatory_tile is not None and tile != self._mandatory_tile:
-            return Result.error("opening move must be the 9-9")
+            return Result.error(
+                f"opening move must be the highest double "
+                f"({self._mandatory_tile.id})"
+            )
         if not self.board.can_place(tile, side):
             return Result.error(f"illegal move: {tile_id} cannot connect to {side}")
 

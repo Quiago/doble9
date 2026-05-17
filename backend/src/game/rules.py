@@ -66,11 +66,26 @@ def deal(rng: random.Random | None = None) -> tuple[dict[Seat, list[Tile]], list
 
 
 def double_nine_holder(hands: Mapping[Seat, Sequence[Tile]]) -> Seat:
-    """Seat holding the 9-9 (the round-1 opener). Raises if undealt."""
+    """Seat holding the 9-9. Raises if it was dealt to the boneyard."""
     for seat, hand in hands.items():
         if DOUBLE_NINE in hand:
             return seat
-    raise ValueError("double-9 not present in any hand (bad deal)")
+    raise ValueError("double-9 not present in any hand")
+
+
+def opening_move(hands: Mapping[Seat, Sequence[Tile]]) -> tuple[Seat, Tile | None]:
+    """Round-1 salida (Cuban rule): the seat holding the **highest double**
+    opens and must play it. With 40 dealt / 15 in the boneyard the 9-9 is
+    often not dealt, so we generalise from "must hold 9-9" to "highest
+    double" (9-9 is simply the top of that order). If no double was dealt
+    at all, seat 0 opens with a free choice.
+    """
+    best: tuple[Seat, Tile] | None = None
+    for seat, hand in hands.items():
+        for tile in hand:
+            if tile.is_double and (best is None or tile.high > best[1].high):
+                best = (seat, tile)
+    return best if best is not None else (0, None)
 
 
 def legal_moves(
@@ -81,8 +96,9 @@ def legal_moves(
 ) -> list[tuple[Tile, BoardSide]]:
     """All `(tile, side)` plays available to a hand on the current board.
 
-    `mandatory_tile` forces the opening move (round 1: the 9-9). When the
-    board is empty the side is nominal ("right"); both ends open afterwards.
+    `mandatory_tile` forces the opening move (round 1: the highest double,
+    see `opening_move`). On an empty board the side is nominal ("right");
+    both ends open afterwards.
     """
     candidates: Sequence[Tile] = (
         [mandatory_tile] if mandatory_tile is not None and mandatory_tile in hand else hand

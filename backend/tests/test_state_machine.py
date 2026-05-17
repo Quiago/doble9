@@ -41,23 +41,27 @@ def test_start_only_from_lobby() -> None:
 
 
 # ── round-1 opening rules ─────────────────────────────────────────────────
-def test_round1_opener_holds_double_nine_and_must_play_it() -> None:
+def test_round1_opener_must_play_highest_double() -> None:
     sm = new_match()
     sm.start()
     opener = sm.turn_seat
     assert opener is not None
-    assert Tile(9, 9) in sm.hands[opener]
+    mt = sm.mandatory_tile
+    assert mt is not None and mt.is_double and mt in sm.hands[opener]
+    # It is the highest double across all hands.
+    all_doubles = [t for h in sm.hands.values() for t in h if t.is_double]
+    assert mt.high == max(d.high for d in all_doubles)
     opener_uid = sm.players[opener].user_id
 
-    # Some other in-hand tile is rejected before the 9-9 is played.
-    other = next(t for t in sm.hands[opener] if t != Tile(9, 9))
+    other = next(t for t in sm.hands[opener] if t != mt)
     bad = sm.play_tile(opener_uid, other.id, "right")
-    assert not bad.success and "9-9" in (bad.error_message or "")
+    assert not bad.success and "highest double" in (bad.error_message or "")
 
-    good = sm.play_tile(opener_uid, "9-9", "right")
+    good = sm.play_tile(opener_uid, mt.id, "right")
     assert good.success and good.event == "tile_placed"
-    assert "DOUBLE_9" in good.specials
-    assert sm.board.open_ends() == (9, 9)
+    if mt == Tile(9, 9):
+        assert "DOUBLE_9" in good.specials
+    assert sm.board.open_ends() == (mt.low, mt.high)
     assert sm.turn_seat == (opener + 1) % 4
 
 
@@ -68,10 +72,12 @@ def test_turn_and_participant_guards() -> None:
     opener = sm.turn_seat
     assert opener is not None
     not_opener = sm.players[(opener + 1) % 4].user_id
+    mt = sm.mandatory_tile
+    assert mt is not None
 
-    assert not sm.play_tile(not_opener, "9-9", "right").success  # not your turn
-    assert not sm.play_tile("ghost", "9-9", "right").success  # not a participant
-    assert sm.play_tile(sm.players[opener].user_id, "9-9", "right").success  # opener can
+    assert not sm.play_tile(not_opener, mt.id, "right").success  # not your turn
+    assert not sm.play_tile("ghost", mt.id, "right").success  # not a participant
+    assert sm.play_tile(sm.players[opener].user_id, mt.id, "right").success  # opener can
 
 
 def test_cannot_pass_with_a_legal_move() -> None:
