@@ -98,6 +98,12 @@ cambio".
   (Socket.IO `/game`, rooms `match:{id}`, handlers finos). `main.py`
   monta ASGI combinado (Socket.IO path `/game` + FastAPI).
 - 8 tests de runtime WS; total 84, `make check` verde.
+- Gemini (Bloque F, `CLAUDE.md §6`): `src/services/gemini_service.py`
+  wrapper async httpx para generación de avatares Muppet de Manolito
+  (prompt con anclas de marca, key desde env, manejo de errores HTTP/
+  respuesta, `GeneratedImage.data_url`, cliente inyectable, nota de
+  coste ≈$0.04/img). 6 tests vía `httpx.MockTransport` (sin red/key);
+  total 90, `make check` verde.
 
 #### Fixed
 - Salida de ronda 1: la regla "quien tiene el 9-9 abre" fallaba cuando
