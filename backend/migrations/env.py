@@ -28,9 +28,10 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL not set (copy backend/.env.example -> .env)")
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
-# AGENT: Backend — replace with `from src.models import Base` then
-# `target_metadata = Base.metadata`.
-target_metadata = None
+# AGENT: Backend — models now exist; autogenerate compares against them.
+from src.models import Base  # noqa: E402
+
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

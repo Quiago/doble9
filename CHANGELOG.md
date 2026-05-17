@@ -56,3 +56,18 @@ cambio".
 - `backend/tests/` — 44 tests de reglas/scoring/máquina de estados;
   `make check` verde (ruff + mypy strict + pytest).
 - `backend/README.md` (faltaba; `pyproject.toml` lo referenciaba).
+- Infra/persistencia (Bloque B): `src/core/config.py` (settings
+  pydantic-settings desde `.env`), `security.py` (JWT PyJWT + hashing
+  bcrypt), `middleware.py` (CORS desde `CORS_ORIGINS`), `db.py` (engine/
+  sesión async asyncpg, lazy), `redis.py` (`RedisMatchStore` clave
+  `match:{id}` TTL 24h, CLAUDE.md §5.2).
+- Modelos SQLAlchemy 2.0 async en `src/models/` (User, PlayerStats,
+  Achievement, Match, MatchPlayer, Inventory) fieles a la migración 0001;
+  `migrations/env.py` ahora apunta a `Base.metadata` (handoff Architect).
+- 15 tests nuevos (config/security/models/redis); total 59, `make check`
+  verde.
+
+#### Changed
+- Hashing de contraseñas: `passlib[bcrypt]` → `bcrypt` directo
+  (passlib 1.7.4 incompatible con bcrypt 4.x). `pyproject.toml` +
+  `uv.lock` actualizados. Sin impacto en contratos.
