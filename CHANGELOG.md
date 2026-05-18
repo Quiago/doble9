@@ -55,6 +55,16 @@ cambio".
   (`arch/fase-0`, `be/fase-1`, `fe/fase-2`) eliminadas; historia integrada
   consolidada en `main` (bf2ba75 = arch + BE A–F + FE A–B + ADR-006).
   Documentado en `docs/plans/README.md` → Topología de worktrees.
+- **Integración M1 a `main`** (3201fee): merge `be/work` (Backend A–F +
+  fix ADR-006) + `fe/work` (Frontend A–D) sin conflictos; `contracts/` y
+  `shared/` intactos (agentes en territorios disjuntos).
+- **Gate de integración — capa SQL validada contra Postgres real**:
+  `make migrate` aplica `0001` (6 tablas + `users.password_hash`),
+  idempotente. Hasta ahora solo se probaba con repos en memoria.
+- `docker-compose.yml`: puerto host parametrizable
+  `${POSTGRES_PORT:-5432}` — evita choque con un Postgres nativo del host
+  (detectado en este entorno: PG nativo en `127.0.0.1:5432`). Documentado
+  en `.env.example`.
 
 ### Frontend
 - _Sin cambios aún._
