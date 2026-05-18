@@ -3,6 +3,7 @@
 // transparent; the prototype never keyed them. We key + de-spill at runtime
 // so both DOM (<ChromaImg>) and Phaser get clean art, assets untouched.
 // AGENT: Frontend.
+import { dlog } from "./debug";
 
 /** Key out green and de-spill edges, in place. */
 function keyGreen(data: Uint8ClampedArray) {
@@ -45,16 +46,29 @@ const cache = new Map<string, Promise<string>>();
 export function chromaUrl(src: string): Promise<string> {
   const hit = cache.get(src);
   if (hit) return hit;
+  dlog("chroma", `load ${src}`);
   const p = new Promise<string>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () =>
-      resolve(
-        chromaCanvas(img, img.naturalWidth, img.naturalHeight).toDataURL(
-          "image/png",
-        ),
+    const t = performance.now();
+    img.onload = () => {
+      const url = chromaCanvas(
+        img,
+        img.naturalWidth,
+        img.naturalHeight,
+      ).toDataURL("image/png");
+      dlog(
+        "chroma",
+        `keyed ${src} (${img.naturalWidth}×${img.naturalHeight}, ${(
+          performance.now() - t
+        ).toFixed(0)}ms)`,
       );
-    img.onerror = reject;
+      resolve(url);
+    };
+    img.onerror = (e) => {
+      dlog("chroma", `FAILED to load ${src}`, e);
+      reject(e);
+    };
     img.src = src;
   });
   cache.set(src, p);

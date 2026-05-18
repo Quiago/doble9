@@ -3,6 +3,7 @@
 import Phaser from "phaser";
 import { ASSETS } from "@/lib/constants";
 import { chromaCanvas } from "@/lib/chroma";
+import { dlog } from "@/lib/debug";
 import { registerTileTextures } from "../textures";
 
 // Manolito/Pollona ship as raw greenscreen; key them before use.
@@ -21,6 +22,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    dlog("phaser", "BootScene.create — baking tile textures");
     registerTileTextures(this);
     for (const key of GREEN_KEYED) {
       if (!this.textures.exists(key)) continue;
@@ -30,7 +32,9 @@ export class BootScene extends Phaser.Scene {
       const cv = chromaCanvas(src, src.width, src.height);
       this.textures.remove(key);
       this.textures.addCanvas(key, cv);
+      dlog("phaser", `chroma-keyed texture "${key}"`);
     }
+    dlog("phaser", "Boot done → TableScene + UIOverlayScene");
     this.scene.start("TableScene");
     this.scene.launch("UIOverlayScene");
   }

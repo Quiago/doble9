@@ -2,6 +2,7 @@
 // stay faithful to design-reference. AGENT: Frontend.
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { dlog } from "./debug";
 
 export type NavKey =
   | "splash"
@@ -44,7 +45,10 @@ export function pathFor(key: NavKey): string {
 export function useGameNav() {
   const navigate = useNavigate();
   return useCallback(
-    (key: NavKey) => navigate(pathFor(key)),
+    (key: NavKey) => {
+      dlog("nav", `go("${key}") → ${pathFor(key)}`);
+      navigate(pathFor(key));
+    },
     [navigate],
   );
 }

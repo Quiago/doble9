@@ -11,6 +11,7 @@ import {
 } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
+import { dlog } from "@/lib/debug";
 
 const DIFFS = [
   { id: "facil", label: "Fácil", color: "#0E7A43" },
@@ -54,7 +55,10 @@ export default function Setup() {
                 <button
                   key={n}
                   className={`s-setup__pn${players === n ? " is-active" : ""}`}
-                  onClick={() => setPlayers(n)}
+                  onClick={() => {
+                    dlog("ui", `setup players=${n}`);
+                    setPlayers(n);
+                  }}
                 >
                   <div className="s-setup__pn-dots">
                     {Array.from({ length: n }).map((_, i) => (
@@ -77,7 +81,10 @@ export default function Setup() {
                 <button
                   key={d.id}
                   className="s-setup__diff"
-                  onClick={() => setDiff(d.id)}
+                  onClick={() => {
+                    dlog("ui", `setup difficulty=${d.id}`);
+                    setDiff(d.id);
+                  }}
                   style={
                     difficulty === d.id
                       ? { borderColor: d.color, background: `${d.color}18`, color: d.color }
@@ -97,7 +104,10 @@ export default function Setup() {
                 <button
                   key={m.id}
                   className={`s-setup__mode${mode === m.id ? " is-active" : ""}`}
-                  onClick={() => setMode(m.id)}
+                  onClick={() => {
+                    dlog("ui", `setup mode=${m.id}`);
+                    setMode(m.id);
+                  }}
                 >
                   <div>
                     <div className="s-setup__mode-l">{m.label}</div>
@@ -119,7 +129,10 @@ export default function Setup() {
                   <button
                     key={p}
                     className={`s-setup__opt${points === p ? " is-active" : ""}`}
-                    onClick={() => setPoints(p)}
+                    onClick={() => {
+                      dlog("ui", `setup points=${p}`);
+                      setPoints(p);
+                    }}
                   >
                     {p}
                   </button>
@@ -132,7 +145,10 @@ export default function Setup() {
                 <button
                   key={t}
                   className={`s-setup__opt s-setup__opt--block${tileset === t ? " is-active" : ""}`}
-                  onClick={() => setTileset(t)}
+                  onClick={() => {
+                    dlog("ui", `setup tileset=${t}`);
+                    setTileset(t);
+                  }}
                 >
                   {t === "doble6" ? "Doble 6 (28)" : "Doble 9 (55)"}
                 </button>

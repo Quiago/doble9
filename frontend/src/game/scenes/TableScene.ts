@@ -16,6 +16,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useUserStore } from "@/store/userStore";
 import { A } from "@/store/types";
 import { PLAYER_COLORS } from "@/lib/constants";
+import { dlog } from "@/lib/debug";
 import { hex } from "../tokens";
 import { TILE_BACK } from "../textures";
 import { TileSprite } from "../entities/TileSprite";
@@ -47,6 +48,7 @@ export class TableScene extends Phaser.Scene {
   }
 
   create() {
+    dlog("phaser", "TableScene.create");
     this.gfx = this.add.graphics();
     this.board = new BoardGroup(this);
     this.opponents = this.add.container(0, 0);
@@ -258,6 +260,12 @@ export class TableScene extends Phaser.Scene {
     const meId = useUserStore.getState().user?.id ?? "u-yo";
     this.mySeat = g.players.find((p) => p.userId === meId)?.seat ?? 0;
     this.myTurn = g.turn?.seat === this.mySeat;
+    dlog(
+      "phaser",
+      `snapshot: seat=${this.mySeat} myTurn=${this.myTurn} hand=${
+        g.hand?.length ?? 0
+      } board=${g.board.tiles.length}`,
+    );
     this.rebuildHand(g.hand ?? []);
     this.board.sync(g.board);
     this.layout();
@@ -301,6 +309,7 @@ export class TableScene extends Phaser.Scene {
     this.input.setDraggable(tile);
 
     tile.on("dragstart", () => {
+      dlog("phaser", `dragstart ${tile.tileId} (myTurn=${this.myTurn})`);
       if (!this.myTurn) return;
       tile.setData("dragging", true);
       tile.setSelectedState(true);
@@ -323,6 +332,12 @@ export class TableScene extends Phaser.Scene {
       const side = this.dragOver;
       this.dragOver = null;
       this.layout();
+      dlog(
+        "phaser",
+        `dragend ${tile.tileId} side=${side ?? "none"} → ${
+          this.myTurn && side ? "TILE_PLAYED" : "snap back"
+        }`,
+      );
       if (this.myTurn && side) {
         // Optimistic: emit intent; server `tile_placed` is authoritative.
         dispatcher.dispatch({

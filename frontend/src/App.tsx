@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { dlog } from "@/lib/debug";
 import Splash from "@/screens/Splash";
 import Landing from "@/screens/Landing";
 import MainMenu from "@/screens/MainMenu";
@@ -29,9 +31,19 @@ function Placeholder({ name }: { name: string }) {
   );
 }
 
+function RouteLogger() {
+  const loc = useLocation();
+  useEffect(() => {
+    dlog("route", `→ ${loc.pathname}`);
+  }, [loc.pathname]);
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
+    <>
+      <RouteLogger />
+      <Routes>
       <Route path="/" element={<Splash />} />
       <Route path="/welcome" element={<Landing />} />
       <Route path="/menu" element={<MainMenu />} />
@@ -46,6 +58,7 @@ export default function App() {
       <Route path="/league" element={<League />} />
       <Route path="/tournament" element={<Placeholder name="Tournament" />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
