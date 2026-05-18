@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["assets/**/*", "fonts/**/*"],
+      includeAssets: ["icon.svg"],
       manifest: {
         name: "Doble 9's — Dominó Cubano Online",
         short_name: "Doble 9's",
@@ -19,8 +19,29 @@ export default defineConfig({
         display: "standalone",
         orientation: "landscape",
         start_url: "/",
+        lang: "es",
+        categories: ["games"],
         icons: [
-          { src: "/assets/logo-greenscreen.png", sizes: "512x512", type: "image/png" },
+          { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+          { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        // App shell + fonts precached; offline SPA fallback.
+        globPatterns: ["**/*.{js,css,html,svg,woff2,ttf}"],
+        navigateFallback: "/index.html",
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            // Heavy art (wood/Manolito ~6MB): cache on first use, never
+            // precache (would bloat the SW install).
+            urlPattern: /\/assets\/.*\.(?:png|jpe?g|webp|svg)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "d9-assets",
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
         ],
       },
       devOptions: { enabled: false },

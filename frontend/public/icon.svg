@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Doble 9's">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#C9A227"/>
+      <stop offset="40%" stop-color="#F7E08A"/>
+      <stop offset="70%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#F2D27A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0D0D0D"/>
+  <text x="256" y="260" text-anchor="middle" font-family="Montserrat, Arial, sans-serif"
+        font-weight="900" font-style="italic" font-size="150" fill="url(#g)">9's</text>
+  <text x="256" y="340" text-anchor="middle" font-family="Montserrat, Arial, sans-serif"
+        font-weight="800" font-size="54" letter-spacing="6" fill="url(#g)">DOBLE</text>
+</svg>

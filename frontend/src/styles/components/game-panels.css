@@ -293,3 +293,21 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/* ── Phaser stage: full-bleed canvas under the header; DOM sidebars overlay
+   the left/right edges (dock band stays clear, drawn by Phaser). ── */
+.s-game__stage { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+.s-game__stage .c-game-canvas { position: absolute; inset: 0; }
+.s-game__ov {
+  position: absolute;
+  top: 10px;
+  bottom: 114px; /* clear the Phaser dock (DOCK_H 104 + 10) */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  z-index: 5;
+  pointer-events: auto;
+}
+.s-game__ov--l { left: 0; width: 200px; padding: 0 8px 0 12px; }
+.s-game__ov--r { right: 0; width: 230px; padding: 0 12px 0 6px; }

@@ -19,6 +19,7 @@ import type {
 } from "@shared/game";
 import { useGameStore } from "./gameStore";
 import { useUiStore } from "./uiStore";
+import { dlog } from "@/lib/debug";
 
 type BusListener = (payload: unknown) => void;
 
@@ -59,6 +60,7 @@ class Dispatcher {
 
   // ── Action router: in from UI / Phaser ─────────────────────────────────
   dispatch<T = unknown>(action: Action<T>) {
+    dlog("dispatch", `↑ ${action.type}`, action.payload);
     const meta = action.meta ?? {
       clientId: CLIENT_ID,
       timestamp: Date.now(),
@@ -95,6 +97,7 @@ class Dispatcher {
 
   // ── Server truth: in from websocket.ts. Reconciles stores + bus ────────
   applyServerMessage(msg: ServerMessage) {
+    dlog("ws", `↓ ${msg.event}`, msg.payload);
     const gs = useGameStore.getState();
     const ui = useUiStore.getState();
 

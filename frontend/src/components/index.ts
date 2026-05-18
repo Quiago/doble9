@@ -2,10 +2,12 @@
 // AGENT: Frontend.
 export { GoldBtn, GhostBtn, GreenBtn, RedBtn } from "./atoms/Button";
 export { Logo } from "./atoms/Logo";
+export { ChromaImg } from "./atoms/ChromaImg";
 export { BackBtn, Divider, OnlineDot } from "./atoms/misc";
 export { Panel } from "./molecules/Panel";
 export { ScreenWrap } from "./layout/ScreenWrap";
 export { NavHeader } from "./layout/NavHeader";
+export { RotateHint } from "./layout/RotateHint";
 export { PlayerAvatar } from "./organisms/PlayerAvatar";
 export { ScorePanel } from "./organisms/ScorePanel";
 export { ChatPanel, type ChatMsg } from "./organisms/ChatPanel";

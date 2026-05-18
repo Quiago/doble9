@@ -1,0 +1,52 @@
+// hooks/useAuth.ts — JWT auth over api + userStore. AGENT: Frontend.
+import { useCallback } from "react";
+import { useUserStore } from "@/store/userStore";
+import { api } from "@/services/api";
+import type { LoginRequest, RegisterRequest } from "@shared/api";
+
+export function useAuth() {
+  const token = useUserStore((s) => s.token);
+  const user = useUserStore((s) => s.user);
+  const setAuth = useUserStore((s) => s.setAuth);
+  const logout = useUserStore((s) => s.logout);
+
+  const login = useCallback(
+    async (data: LoginRequest) => {
+      const res = await api.login(data);
+      setAuth(res.token, res.user);
+      return res.user;
+    },
+    [setAuth],
+  );
+
+  const register = useCallback(
+    async (data: RegisterRequest) => {
+      const res = await api.register(data);
+      setAuth(res.token, res.user);
+      return res.user;
+    },
+    [setAuth],
+  );
+
+  /** Cold-reload: have a token but no user → hydrate from /auth/me. */
+  const bootstrap = useCallback(async () => {
+    const t = useUserStore.getState().token;
+    if (!t || useUserStore.getState().user) return;
+    try {
+      const me = await api.me();
+      setAuth(t, me);
+    } catch {
+      logout();
+    }
+  }, [setAuth, logout]);
+
+  return {
+    token,
+    user,
+    isAuthed: !!token,
+    login,
+    register,
+    logout,
+    bootstrap,
+  };
+}

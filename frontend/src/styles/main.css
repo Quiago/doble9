@@ -9,4 +9,5 @@
 @import "./objects/layout.css";
 @import "./components/index.css";
 @import "./utilities/utilities.css";
+@import "./utilities/responsive.css";
 @import "./phaser/phaser.css";

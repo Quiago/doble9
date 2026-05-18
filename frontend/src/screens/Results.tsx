@@ -2,7 +2,7 @@
 // AGENT: Frontend. `won` arrives via router state; defaults to win in mock.
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Panel, Divider, GoldBtn, GhostBtn } from "@/components";
+import { Panel, Divider, GoldBtn, GhostBtn, ChromaImg } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
 
@@ -64,7 +64,7 @@ export default function Results() {
         </div>
       </div>
 
-      <img
+      <ChromaImg
         className={`s-results__manolito ${won ? "s-results__manolito--win" : "s-results__manolito--lose"}`}
         src={won ? ASSETS.manolitoWave : ASSETS.manolitoSurp}
         alt="Manolito"
