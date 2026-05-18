@@ -13,6 +13,7 @@ import {
   ChatPanel,
   TipsPanel,
   MesaInfoPanel,
+  RotateHint,
   type ChatMsg,
 } from "@/components";
 import { ASSETS } from "@/lib/constants";
@@ -81,6 +82,7 @@ export default function GameTable() {
 
   return (
     <div className="s-game">
+      <RotateHint />
       <div className="s-game__header">
         <div className="s-game__header-l">
           <Logo size="sm" />

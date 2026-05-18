@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "@/App";
 import { dbanner, dlog } from "@/lib/debug";
+import { audio } from "@/audio/AudioEngine";
 import "@/styles/main.css";
 
 // AGENT: Frontend — entry point. MSW + WS-fake boot before render in mock mode.
@@ -35,6 +36,8 @@ async function bootstrap() {
     const { socketTransport } = await import("@/services/websocket");
     socketTransport.connect();
   }
+
+  audio.start();
 
   dlog("boot", "React render");
   createRoot(document.getElementById("root")!).render(

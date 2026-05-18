@@ -7,6 +7,7 @@ export { BackBtn, Divider, OnlineDot } from "./atoms/misc";
 export { Panel } from "./molecules/Panel";
 export { ScreenWrap } from "./layout/ScreenWrap";
 export { NavHeader } from "./layout/NavHeader";
+export { RotateHint } from "./layout/RotateHint";
 export { PlayerAvatar } from "./organisms/PlayerAvatar";
 export { ScorePanel } from "./organisms/ScorePanel";
 export { ChatPanel, type ChatMsg } from "./organisms/ChatPanel";

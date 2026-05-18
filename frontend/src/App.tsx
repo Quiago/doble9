@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { dlog } from "@/lib/debug";
+import { useAuth } from "@/hooks";
 import Splash from "@/screens/Splash";
 import Landing from "@/screens/Landing";
 import MainMenu from "@/screens/MainMenu";
@@ -39,10 +40,20 @@ function RouteLogger() {
   return null;
 }
 
+/** Cold-reload auth hydration: token in localStorage → fetch /auth/me. */
+function AuthBootstrap() {
+  const { bootstrap } = useAuth();
+  useEffect(() => {
+    void bootstrap();
+  }, [bootstrap]);
+  return null;
+}
+
 export default function App() {
   return (
     <>
       <RouteLogger />
+      <AuthBootstrap />
       <Routes>
       <Route path="/" element={<Splash />} />
       <Route path="/welcome" element={<Landing />} />

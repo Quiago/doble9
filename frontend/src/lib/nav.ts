@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { dlog } from "./debug";
+import { audio } from "@/audio/AudioEngine";
 
 export type NavKey =
   | "splash"
@@ -47,6 +48,7 @@ export function useGameNav() {
   return useCallback(
     (key: NavKey) => {
       dlog("nav", `go("${key}") → ${pathFor(key)}`);
+      audio.click();
       navigate(pathFor(key));
     },
     [navigate],
