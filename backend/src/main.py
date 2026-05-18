@@ -85,14 +85,13 @@ def create_app() -> FastAPI:
 
 fastapi_app = create_app()
 
-# Realtime gateway (Block D). Socket.IO is served at path `/game`
-# (websocket.yml `pathname: /game`); REST is delegated to FastAPI.
-# NOTE (Architect/FE): websocket.yml names `/game` as both pathname and
-# namespace — here `/game` is the Engine.IO path with the default
-# namespace. FE `services/websocket.ts` must match. Flag if a real
-# Socket.IO namespace `/game` is required instead.
+# Realtime gateway (Block D). Per ADR-006 `/game` is the Socket.IO
+# NAMESPACE; the Engine.IO transport path stays the default `/socket.io`
+# (so `socketio_path` is NOT set). Handlers/emits use namespace `/game`
+# in gateway.py. Client: io(`${origin}/game`, { path: "/socket.io" }).
+# REST is delegated to FastAPI.
 _registry = MatchRegistry(store=RedisMatchStore())
 _sio = build_gateway(_registry, get_settings())
 
-app = socketio.ASGIApp(_sio, other_asgi_app=fastapi_app, socketio_path="game")
+app = socketio.ASGIApp(_sio, other_asgi_app=fastapi_app)
 

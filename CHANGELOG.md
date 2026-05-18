@@ -127,6 +127,11 @@ cambio".
   regla cubana real: **abre el doble más alto** (`rules.opening_move`);
   9-9 es solo el tope de ese orden. Sin doble repartido → asiento 0
   abre libre. Bug del núcleo (Bloque A) detectado por los tests de D.
+- ADR-006: `/game` es **namespace** Socket.IO, no path Engine.IO.
+  `src/main.py` deja de pasar `socketio_path` (Engine.IO usa el default
+  `/socket.io`); `src/ws/gateway.py` registra handlers y emite/`enter_room`
+  con `namespace="/game"`. Conforme a `websocket.yml` congelado; FE ya
+  conforme. `make check` verde (90 tests).
 
 #### Changed
 - `pyproject.toml`: overrides mypy para `socketio.*`
