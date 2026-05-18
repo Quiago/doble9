@@ -1,7 +1,14 @@
 // screens/Setup.tsx — (4) Single Player Setup. From setup-lobby.jsx.
 // AGENT: Frontend. Selections are local UI only; backend creates the match.
 import { useState } from "react";
-import { ScreenWrap, NavHeader, Panel, Divider, GoldBtn } from "@/components";
+import {
+  ScreenWrap,
+  NavHeader,
+  Panel,
+  Divider,
+  GoldBtn,
+  ChromaImg,
+} from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
 
@@ -170,11 +177,7 @@ export default function Setup() {
           >
             ¡A JUGAR!
           </GoldBtn>
-          <img
-            className="s-setup__manolito"
-            src={ASSETS.manolitoHold}
-            alt=""
-          />
+          <ChromaImg className="s-setup__manolito" src={ASSETS.manolitoHold} />
         </div>
       </div>
     </ScreenWrap>

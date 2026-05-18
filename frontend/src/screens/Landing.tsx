@@ -1,6 +1,6 @@
 // screens/Landing.tsx — (2) Landing. From design-reference/splash-landing.jsx.
 // AGENT: Frontend.
-import { Logo, GoldBtn, GhostBtn, OnlineDot } from "@/components";
+import { Logo, GoldBtn, GhostBtn, OnlineDot, ChromaImg } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav, type NavKey } from "@/lib/nav";
 
@@ -91,7 +91,7 @@ export default function Landing() {
 
         <div className="s-landing__hero">
           <div className="s-landing__hero-glow" />
-          <img
+          <ChromaImg
             className="s-landing__hero-img"
             src={ASSETS.manolitoWave}
             alt="Manolito"

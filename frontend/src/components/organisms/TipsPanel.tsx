@@ -1,5 +1,7 @@
 // components/organisms/TipsPanel.tsx — From GamePanels.jsx TipsPanel.
 // AGENT: Frontend.
+import { ChromaImg } from "@/components/atoms/ChromaImg";
+
 interface TipsPanelProps {
   tips: string[];
   tipIndex: number;
@@ -12,7 +14,7 @@ export function TipsPanel({ tips, tipIndex, manolitoImg }: TipsPanelProps) {
     <div className="c-gp c-gp--gold c-tips">
       <div className="c-tips__h">MANOLITO DOBLE 9</div>
       <div className="c-tips__body">
-        <img className="c-tips__img" src={manolitoImg} alt="Manolito" />
+        <ChromaImg className="c-tips__img" src={manolitoImg} alt="Manolito" />
         <div className="c-tips__bubble">{tips[idx]}</div>
         <div className="c-tips__dots">
           {tips.map((_, i) => (

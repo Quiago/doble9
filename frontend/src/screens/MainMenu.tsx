@@ -1,6 +1,6 @@
 // screens/MainMenu.tsx — (3) Main Menu. From design-reference/main-menu.jsx.
 // AGENT: Frontend.
-import { Logo, GoldBtn, Panel, OnlineDot } from "@/components";
+import { Logo, GoldBtn, Panel, OnlineDot, ChromaImg } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav, type NavKey } from "@/lib/nav";
 
@@ -45,7 +45,7 @@ export default function MainMenu() {
 
       <div className="s-menu__main">
         <div className="s-menu__left">
-          <img
+          <ChromaImg
             className="s-menu__manolito"
             src={ASSETS.manolitoWave}
             alt="Manolito"

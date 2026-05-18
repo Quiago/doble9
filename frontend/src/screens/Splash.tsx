@@ -1,7 +1,7 @@
 // screens/Splash.tsx — (1) Splash. From design-reference/splash-landing.jsx.
 // AGENT: Frontend.
 import { useEffect, useState } from "react";
-import { Logo } from "@/components";
+import { Logo, ChromaImg } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
 
@@ -33,7 +33,7 @@ export default function Splash() {
       <div className="s-splash__logo">
         <Logo size="xl" tagline />
       </div>
-      <img className="s-splash__manolito" src={ASSETS.manolitoWave} alt="" />
+      <ChromaImg className="s-splash__manolito" src={ASSETS.manolitoWave} />
       <div className="s-splash__progress">
         <div className="s-splash__track">
           <div className="s-splash__bar" style={{ width: `${progress * 100}%` }} />
