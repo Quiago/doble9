@@ -2,8 +2,9 @@
 // React/DOM; the wood table, chain, drop zones, hand dock and Pollona overlay
 // render in the Phaser canvas mounted at .s-game__canvas (Bloque C).
 // AGENT: Frontend. From game-screen.jsx + GamePanels.jsx.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { GameManager } from "@/game/GameManager";
 import {
   Logo,
   OnlineDot,
@@ -43,11 +44,19 @@ export default function GameTable() {
   const chat = useGameStore((s) => s.chat);
   const meId = useUserStore((s) => s.user?.id) ?? "u-yo";
   const [tipIdx, setTipIdx] = useState(0);
+  const mountRef = useRef<HTMLDivElement>(null);
 
   // Join on mount → transport replies with an authoritative game_state.
   useEffect(() => {
     dispatcher.dispatch({ type: A.JOIN_LOBBY, payload: { matchId } });
   }, [matchId]);
+
+  // Mount the Phaser engine (boundary = Dispatcher only, ADR-002).
+  useEffect(() => {
+    if (!mountRef.current) return;
+    const gm = new GameManager(mountRef.current);
+    return () => gm.destroy();
+  }, []);
 
   // Advance Manolito's tip every turn change (decoupled via the bus).
   useEffect(
@@ -93,8 +102,12 @@ export default function GameTable() {
         </div>
       </div>
 
-      <div className="s-game__body">
-        <div className="s-game__side-l">
+      <div className="s-game__stage">
+        {/* Phaser TableScene renders the wood mesa, chain, drop zones,
+            opponents, hand dock + Pollona/Capicúa here (ADR-002). */}
+        <div ref={mountRef} className="c-game-canvas" />
+
+        <div className="s-game__ov s-game__ov--l">
           <ScorePanel
             players={scoreRows}
             round={game?.round ?? 1}
@@ -103,17 +116,7 @@ export default function GameTable() {
           <ChatPanel messages={messages} />
         </div>
 
-        <div className="s-game__center">
-          {/* Phaser TableScene mounts here in Bloque C. */}
-          <div className="s-game__canvas" id="game-canvas-mount">
-            <div className="s-game__canvas-ph">Doble 9's</div>
-            <div className="s-game__canvas-note">
-              Mesa — render Phaser (Bloque C)
-            </div>
-          </div>
-        </div>
-
-        <div className="s-game__side-r">
+        <div className="s-game__ov s-game__ov--r">
           <MesaInfoPanel
             online={players.filter((p) => p.connected).length || 4}
             capacity={players.length || 4}
