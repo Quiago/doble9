@@ -13,6 +13,15 @@ APP            := src.main:app
 PORT           ?= 8000
 HOST           ?= 0.0.0.0
 
+# Load .env so targets that read raw os.environ (alembic env.py) work without
+# manual `export`. The app itself loads .env via pydantic-settings; this makes
+# `make migrate`/`makemigration`/`db-reset` consistent with that. Real env vars
+# (CI, prod) still win because `-include` does not override exported values.
+ifneq (,$(wildcard ./.env))
+include ./.env
+export
+endif
+
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -31,8 +40,13 @@ sync: ## Sync env to match uv.lock exactly
 dev: ## Run FastAPI with autoreload (local development)
 	uv run uvicorn $(APP) --reload --host $(HOST) --port $(PORT)
 
-run: ## Run FastAPI without reload (prod-like)
-	uv run uvicorn $(APP) --host $(HOST) --port $(PORT) --workers 4
+run: ## Run FastAPI without reload (prod-like, SINGLE worker — see note)
+	# Single worker is REQUIRED until M2: the WS MatchRegistry (src/ws/registry.py)
+	# keeps live MatchRuntimes in an in-process dict, so multiple workers would
+	# fragment matches/rooms across processes. REST is Postgres-backed and would
+	# scale fine, but Socket.IO state is not shared. To scale out: move the
+	# registry behind Redis + a Socket.IO Redis adapter, then raise --workers.
+	uv run uvicorn $(APP) --host $(HOST) --port $(PORT)
 
 ## ---------- Tests ----------
 test: ## Run full test suite

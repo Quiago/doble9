@@ -65,9 +65,43 @@ cambio".
   `${POSTGRES_PORT:-5432}` — evita choque con un Postgres nativo del host
   (detectado en este entorno: PG nativo en `127.0.0.1:5432`). Documentado
   en `.env.example`.
+- **Integración pantallas P1–P3** (merge `fe/work` `c1b88b0`): Tutorial,
+  Profile, Settings, Store, Tournament + `molecules/DominoTile`. Las 13
+  pantallas del inventario existen. Sin conflictos.
+- **ADR-007 — handshake de auth WS**: el `connect` del backend exige
+  `auth.token` (JWT) y rechaza la conexión sin él; el frontend mandaba solo
+  `auth.clientId`. Causa raíz: `websocket.yml` nunca especificó el `auth` de
+  conexión. Resuelto: `auth: { token, clientId }`. Fix aplicado en
+  `frontend/src/services/websocket.ts` (lee el JWT de `userStore`); backend
+  ya conforme. `contracts/websocket.yml` documenta el handshake.
+- **ADR-008 — topología de deploy + normalización DSN + single worker**:
+  - `backend/Dockerfile` (multi-stage uv, solo deps prod, no-root, corre
+    `alembic upgrade head` y luego uvicorn 1 worker, `$PORT`) + `.dockerignore`.
+    Imagen construida y arrancada OK (migra DSN sync→asyncpg, `/health` 200,
+    register 201).
+  - `to_async_dsn` en `core/config.py` + aplicado en `migrations/env.py`:
+    reescribe `postgres://`/`postgresql://` → `postgresql+asyncpg://` para que
+    el `connectionString` de Render/Railway funcione tal cual. 6 tests nuevos.
+  - `vercel.json` (raíz): build `npm --prefix frontend …`, output
+    `frontend/dist`, rewrites SPA, cache headers SW/assets.
+  - `render.yaml`: blueprint backend + Postgres 16 + Redis.
+  - `Makefile`: carga `.env` (arregla `make migrate` sin `export` manual) y
+    `run` pasa a **1 worker** (el `MatchRegistry` WS es in-process hasta M2).
+- **Documentación**: `README.md` reescrito (estado M1 integrado/deployable,
+  arquitectura, qué hizo/hace cada agente, inventario de features, run local,
+  deploy) + `docs/DEPLOY.md` (runbook Vercel + Render, env vars, checklist,
+  gotchas).
+- **Gate de integración en vivo**: smoke REST (register/login/me/matches/
+  leaderboard/store contra Postgres real) + WS (`/game`, join_lobby,
+  start_match, bots juegan solos; envelope `{event,matchId,payload,timestamp}`
+  conforme al lector del FE). `make check` verde (96 tests).
 
 ### Frontend
-- _Sin cambios aún._
+
+#### Fixed
+- WS connect manda el JWT en `auth` (`{ token, clientId }`) — antes solo
+  `clientId`, lo que el backend rechazaba (ADR-007). Aplicado por el Architect
+  durante la integración; el agente FE debe revisar el diff de `websocket.ts`.
 
 ### Backend
 

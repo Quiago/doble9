@@ -1,6 +1,33 @@
 """Settings parsing."""
 
-from src.core.config import Settings, get_settings
+import pytest
+
+from src.core.config import Settings, get_settings, to_async_dsn
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        # Managed-provider sync URLs upgrade to asyncpg (ADR-008).
+        ("postgres://u:p@h:5432/db", "postgresql+asyncpg://u:p@h:5432/db"),
+        ("postgresql://u:p@h:5432/db", "postgresql+asyncpg://u:p@h:5432/db"),
+        # Already-async or other drivers are left untouched.
+        ("postgresql+asyncpg://u:p@h/db", "postgresql+asyncpg://u:p@h/db"),
+        ("postgresql+psycopg://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
+        ("sqlite+aiosqlite:///x.db", "sqlite+aiosqlite:///x.db"),
+    ],
+)
+def test_to_async_dsn(raw: str, expected: str) -> None:
+    assert to_async_dsn(raw) == expected
+
+
+def test_settings_normalizes_sync_dsn() -> None:
+    s = Settings(
+        DATABASE_URL="postgres://u:p@h:5432/db",  # type: ignore[call-arg]
+        REDIS_URL="y",
+        SECRET_KEY="z",
+    )
+    assert s.database_url == "postgresql+asyncpg://u:p@h:5432/db"
 
 
 def test_settings_load_from_env() -> None:

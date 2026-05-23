@@ -23,10 +23,13 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # DB URL from environment (12-factor). Never hardcode in alembic.ini.
+# Normalize to the asyncpg driver (ADR-008) so managed-Postgres URLs work.
+from src.core.config import to_async_dsn  # noqa: E402
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL not set (copy backend/.env.example -> .env)")
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", to_async_dsn(DATABASE_URL))
 
 # AGENT: Backend — models now exist; autogenerate compares against them.
 from src.models import Base  # noqa: E402

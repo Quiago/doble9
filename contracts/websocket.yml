@@ -11,6 +11,15 @@ info:
 # Engine.IO transport path. Engine.IO path stays the default `/socket.io`.
 # Client: io(`${origin}/game`, { path: "/socket.io" }). Server: register
 # handlers + emit on namespace "/game"; do NOT set socketio_path.
+#
+# ARCHITECT RULING (ADR-007): connection AUTH handshake. The Socket.IO
+# `auth` object sent on connect MUST carry:
+#   { token: "<JWT from POST /auth/login|register>", clientId: "<stable uuid>" }
+# - `token`    (required): the server's `connect` handler validates it and
+#                REJECTS the namespace connection if missing/invalid.
+# - `clientId` (required): stable per-device id; reconnect + action dedup anchor.
+# Client: io(url, { path:"/socket.io", auth:{ token, clientId } }).
+# Per-action messages also echo `clientId` in their payload for dedup.
 servers:
   local:
     host: localhost:8000

@@ -7,6 +7,7 @@ import type { ClientMessage, Transport } from "@/store/types";
 import type { ServerMessage, ServerEvent } from "@shared/game";
 import { useGameStore } from "@/store/gameStore";
 import { useUiStore } from "@/store/uiStore";
+import { useUserStore } from "@/store/userStore";
 
 const SERVER_EVENTS: ServerEvent[] = [
   "game_state",
@@ -32,10 +33,13 @@ class SocketTransport implements Transport {
     if (this.socket) return;
     useUiStore.getState().setConn("connecting");
 
+    // Connect-time auth handshake (ADR-007): `token` (JWT) authenticates the
+    // socket — the server's `connect` handler rejects the namespace without it;
+    // `clientId` is the stable reconnect/dedup anchor.
     this.socket = io(import.meta.env.VITE_WS_URL, {
       path: "/socket.io",
       transports: ["websocket"],
-      auth: { clientId: CLIENT_ID },
+      auth: { token: useUserStore.getState().token, clientId: CLIENT_ID },
       reconnection: true,
       reconnectionDelay: 500,
       reconnectionDelayMax: 4000,

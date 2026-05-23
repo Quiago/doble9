@@ -1,0 +1,45 @@
+# Doble 9's — Render blueprint (backend + Postgres + Redis). See ADR-008.
+# Deploy: push to GitHub, then Render → "New +" → "Blueprint" → pick this repo.
+# Frontend is NOT here — it deploys to Vercel (see /vercel.json).
+services:
+  - type: web
+    name: doble9s-backend
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: starter # persistent instance — required for WebSockets
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        # connectionString is `postgresql://…`; the app normalizes it to
+        # the asyncpg driver at runtime (ADR-008 to_async_dsn).
+        fromDatabase:
+          name: doble9s-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: doble9s-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true # strong random key (>=32 bytes)
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: GEMINI_API_KEY
+        sync: false # set in dashboard
+      - key: CORS_ORIGINS
+        sync: false # set to the Vercel URL, e.g. https://doble9s.vercel.app
+
+  # Redis ("Key Value" on Render) as a private service.
+  - type: redis
+    name: doble9s-redis
+    plan: free
+    ipAllowList: [] # private network only
+
+databases:
+  - name: doble9s-db
+    plan: free
+    postgresMajorVersion: "16"

@@ -14,6 +14,23 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
+def to_async_dsn(url: str) -> str:
+    """Normalize a Postgres DSN to the asyncpg driver (ADR-008).
+
+    Managed providers (Render, Railway, Heroku) hand out `postgres://` or
+    `postgresql://` URLs (sync drivers). SQLAlchemy's async engine and our
+    Alembic env need `postgresql+asyncpg://`. Rewrite the scheme if no async
+    driver is already specified; leave non-Postgres / already-async URLs alone.
+    """
+    if url.startswith("postgresql+") or url.startswith("postgres+"):
+        return url
+    if url.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + url[len("postgresql://") :]
+    if url.startswith("postgres://"):
+        return "postgresql+asyncpg://" + url[len("postgres://") :]
+    return url
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -29,6 +46,11 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_dsn(cls, v: object) -> object:
+        return to_async_dsn(v) if isinstance(v, str) else v
 
     # Auth (JWT)
     secret_key: str = Field(default="change-me-in-production", alias="SECRET_KEY")
