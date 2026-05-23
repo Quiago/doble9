@@ -5,6 +5,7 @@ export { Logo } from "./atoms/Logo";
 export { ChromaImg } from "./atoms/ChromaImg";
 export { BackBtn, Divider, OnlineDot } from "./atoms/misc";
 export { Panel } from "./molecules/Panel";
+export { DominoTile } from "./molecules/DominoTile";
 export { ScreenWrap } from "./layout/ScreenWrap";
 export { NavHeader } from "./layout/NavHeader";
 export { RotateHint } from "./layout/RotateHint";
