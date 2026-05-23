@@ -10,28 +10,13 @@ import Lobby from "@/screens/Lobby";
 import Results from "@/screens/Results";
 import League from "@/screens/League";
 import GameTable from "@/screens/GameTable";
+import Tutorial from "@/screens/Tutorial";
+import Profile from "@/screens/Profile";
+import Settings from "@/screens/Settings";
+import Store from "@/screens/Store";
+import Tournament from "@/screens/Tournament";
 
 // AGENT: Frontend — route table mirrors CLAUDE.md §4.3 screen inventory.
-// Remaining screens land in Bloque B/C; placeholders keep dev green meanwhile.
-function Placeholder({ name }: { name: string }) {
-  return (
-    <div
-      style={{
-        height: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "var(--negro)",
-        color: "var(--dorado)",
-        fontFamily: "var(--font-heading)",
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
-      }}
-    >
-      {name}
-    </div>
-  );
-}
-
 function RouteLogger() {
   const loc = useLocation();
   useEffect(() => {
@@ -62,12 +47,12 @@ export default function App() {
       <Route path="/play/lobby/:code" element={<Lobby />} />
       <Route path="/play/match/:id" element={<GameTable />} />
       <Route path="/play/match/:id/results" element={<Results />} />
-      <Route path="/tutorial/:level" element={<Placeholder name="Tutorial" />} />
-      <Route path="/profile/:userId" element={<Placeholder name="Profile" />} />
-      <Route path="/settings" element={<Placeholder name="Settings" />} />
-      <Route path="/store" element={<Placeholder name="Store" />} />
+      <Route path="/tutorial/:level" element={<Tutorial />} />
+      <Route path="/profile/:userId" element={<Profile />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/store" element={<Store />} />
       <Route path="/league" element={<League />} />
-      <Route path="/tournament" element={<Placeholder name="Tournament" />} />
+      <Route path="/tournament" element={<Tournament />} />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
