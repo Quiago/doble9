@@ -34,7 +34,16 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       onSuccess();
     } catch (err: any) {
       dlog("error", "auth failed", err);
-      toast(err.message || "Error de autenticación", "error");
+      let errMsg = err.message || "Error de autenticación";
+      if (err.body?.code === "unprocessable_entity" && err.body?.details?.errors) {
+        const errs = err.body.details.errors as any[];
+        if (errs.length > 0) {
+          const field = errs[0].loc?.[errs[0].loc.length - 1];
+          const msg = errs[0].msg;
+          errMsg = `${field}: ${msg}`;
+        }
+      }
+      toast(errMsg, "error");
     } finally {
       setLoading(false);
     }
