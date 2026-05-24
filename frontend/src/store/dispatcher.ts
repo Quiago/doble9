@@ -121,6 +121,12 @@ class Dispatcher {
         break;
       }
 
+      case "player_passed": {
+        const p = msg.payload as { bySeat: number };
+        this.emit("player_passed", p);
+        break;
+      }
+
       case "special_play": {
         const p = msg.payload as SpecialPlayPayload;
         ui.triggerSpecialFx(p.type, p.bySeat);

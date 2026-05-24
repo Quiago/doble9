@@ -284,7 +284,7 @@ class MatchStateMachine:
             return self._apply_round_outcome(outcome.winner_team, outcome.points, "TRANQUE", ())
 
         self.turn_seat = next_seat(seat)
-        return Result.ok("turn_changed", {"turn": self._turn_info()})
+        return Result.ok("player_passed", {"turn": self._turn_info()})
 
     # ── round / match resolution ─────────────────────────────────────────
     def _apply_round_outcome(

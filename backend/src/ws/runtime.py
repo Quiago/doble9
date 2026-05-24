@@ -172,6 +172,9 @@ class MatchRuntime:
             out.append(self._env("turn_changed", {"turn": payload["turn"]}))
         elif ev == "turn_changed":
             out.append(self._env("turn_changed", {"turn": payload["turn"]}))
+        elif ev == "player_passed":
+            out.append(self._env("player_passed", {"bySeat": acting_seat}))
+            out.append(self._env("turn_changed", {"turn": payload["turn"]}))
         elif ev == "round_end":
             out.append(
                 self._env(

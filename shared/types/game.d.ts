@@ -134,7 +134,8 @@ export type ServerEvent =
   | "player_disconnected"
   | "round_end"
   | "match_end"
-  | "error";
+  | "error"
+  | "player_passed";
 
 export interface ServerMessage<P = unknown> {
   event: ServerEvent;

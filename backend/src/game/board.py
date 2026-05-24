@@ -38,11 +38,13 @@ class PlacedTile:
     tile: Tile
     order: int
     by_seat: Seat
+    is_flipped: bool = False
 
     def to_dict(self) -> PlacedTileDict:
+        ends = (self.tile.high, self.tile.low) if self.is_flipped else self.tile.ends
         return {
             "id": self.tile.id,
-            "ends": self.tile.ends,
+            "ends": ends,
             "order": self.order,
             "bySeat": self.by_seat,
         }
@@ -110,21 +112,24 @@ class Board:
                 f"(ends: left={self._left_end}, right={self._right_end})"
             )
 
-        placed = PlacedTile(tile=tile, order=len(self._tiles), by_seat=by_seat)
-
         if self.is_empty:
             self._left_end = tile.low
             self._right_end = tile.high
+            placed = PlacedTile(tile=tile, order=len(self._tiles), by_seat=by_seat)
             self._tiles.append(placed)
             return placed
 
         if side == "left":
             assert self._left_end is not None
+            is_flipped = (tile.low == self._left_end)
             self._left_end = tile.other_end(self._left_end)
+            placed = PlacedTile(tile=tile, order=len(self._tiles), by_seat=by_seat, is_flipped=is_flipped)
             self._tiles.insert(0, placed)
         else:
             assert self._right_end is not None
+            is_flipped = (tile.high == self._right_end)
             self._right_end = tile.other_end(self._right_end)
+            placed = PlacedTile(tile=tile, order=len(self._tiles), by_seat=by_seat, is_flipped=is_flipped)
             self._tiles.append(placed)
         return placed
 

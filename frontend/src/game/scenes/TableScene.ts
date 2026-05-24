@@ -78,6 +78,9 @@ export class TableScene extends Phaser.Scene {
       dispatcher.on("turn_changed", (p) =>
         this.onTurnChanged(p as TurnChangedPayload),
       ),
+      dispatcher.on("player_passed", (p) =>
+        this.onPlayerPassed(p as { bySeat: number }),
+      ),
     );
 
     const snap = useGameStore.getState().game;
@@ -304,14 +307,24 @@ export class TableScene extends Phaser.Scene {
           color,
         })
         .setOrigin(0.5);
-      av.add([disc, ini]);
+      const countBg = this.add.circle(0, 20, 10, 0x000000, 0.8).setStrokeStyle(1, hex("--dorado"), 0.8);
+      const countTxt = this.add.text(0, 20, p.tilesCount.toString(), {
+        fontFamily: "Montserrat, sans-serif",
+        fontStyle: "700",
+        fontSize: "12px",
+        color: "#ffffff",
+      }).setOrigin(0.5);
+
+      av.add([disc, ini, countBg, countTxt]);
       this.opponents.add(av);
 
-      const n = Math.min(p.tilesCount, 8);
+      const n = Math.min(p.tilesCount, 10);
       for (let i = 0; i < n; i++) {
-        const back = this.add.image(0, 0, TILE_BACK).setDisplaySize(11, 22);
-        if (s.col) back.setPosition(s.x, s.y + 28 + i * 12).setAngle(90);
-        else back.setPosition(s.x - (n * 13) / 2 + i * 13, s.y + 34);
+        const back = this.add.image(0, 0, TILE_BACK).setDisplaySize(14, 28);
+        if (s.col) back.setPosition(s.x, s.y + 38 + i * 14).setAngle(90);
+        else back.setPosition(s.x - (n * 15) / 2 + i * 15, s.y + 42);
+        // Slightly brighten the backs so they stand out more against the dark background
+        back.setTint(0xdddddd);
         this.opponents.add(back);
       }
     }
@@ -346,6 +359,46 @@ export class TableScene extends Phaser.Scene {
       this.layoutOpponents();
     }
     this.layout();
+  }
+
+  private onPlayerPassed(p: { bySeat: number }) {
+    const seat = p.bySeat;
+    let x: number | undefined;
+    let y: number | undefined;
+
+    if (seat === this.mySeat) {
+      x = this.scale.gameSize.width / 2;
+      y = this.scale.gameSize.height - DOCK_H - 20;
+    } else {
+      const t = this.tableRect;
+      const players = useGameStore.getState().game?.players ?? [];
+      const others = players.filter((pl) => pl.seat !== this.mySeat);
+      if (others[0] && others[0].seat === seat) { x = t.centerX; y = t.y + 30; }
+      else if (others[1] && others[1].seat === seat) { x = t.x + 36; y = t.centerY; }
+      else if (others[2] && others[2].seat === seat) { x = t.right - 36; y = t.centerY; }
+    }
+
+    if (x !== undefined && y !== undefined) {
+      const txt = this.add.text(x, y - 20, "¡PASO!", {
+        fontFamily: "Montserrat, sans-serif",
+        fontStyle: "900",
+        fontSize: "28px",
+        color: "#ff4444",
+        stroke: "#000000",
+        strokeThickness: 6,
+      }).setOrigin(0.5).setAlpha(0);
+
+      this.tweens.add({
+        targets: txt,
+        y: y - 50,
+        alpha: 1,
+        duration: 300,
+        ease: "Back.out",
+        yoyo: true,
+        hold: 1200,
+        onComplete: () => txt.destroy()
+      });
+    }
   }
 
   private onTurnChanged(p: TurnChangedPayload) {
