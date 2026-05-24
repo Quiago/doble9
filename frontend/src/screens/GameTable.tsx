@@ -47,6 +47,25 @@ export default function GameTable() {
   const [tipIdx, setTipIdx] = useState(0);
   const mountRef = useRef<HTMLDivElement>(null);
 
+  // Derived: should show "No Llevo" button?
+  const myTurn = game?.turn?.userId === meId;
+  const canPass = (() => {
+    if (!myTurn || !game || game.status !== "PLAYING") return false;
+    // Server-provided flag (from snapshot)
+    if (game.canPass === true) return true;
+    // Client-computed fallback: if it's my turn and I have tiles but none match
+    const hand = game.hand ?? [];
+    if (hand.length === 0) return false;
+    const { leftEnd, rightEnd } = game.board;
+    // Empty board → any tile can be played
+    if (leftEnd == null && rightEnd == null) return false;
+    const hasPlayable = hand.some((id) => {
+      const [a, b] = id.split("-").map(Number);
+      return a === leftEnd || b === leftEnd || a === rightEnd || b === rightEnd;
+    });
+    return !hasPlayable;
+  })();
+
   // Join on mount → transport replies with an authoritative game_state.
   useEffect(() => {
     dispatcher.dispatch({ type: A.JOIN_LOBBY, payload: { matchId } });
@@ -64,6 +83,10 @@ export default function GameTable() {
     () => dispatcher.on("turn_changed", () => setTipIdx((n) => n + 1)),
     [],
   );
+
+  const handlePass = () => {
+    dispatcher.dispatch({ type: A.PASS, payload: { matchId } });
+  };
 
   const players = game?.players ?? [];
   const scoreRows = players.map((p) => ({
@@ -108,6 +131,23 @@ export default function GameTable() {
         {/* Phaser TableScene renders the wood mesa, chain, drop zones,
             opponents, hand dock + Pollona/Capicúa here (ADR-002). */}
         <div ref={mountRef} className="c-game-canvas" />
+
+        {/* "No Llevo" pass-turn button — visible only when canPass is true */}
+        {canPass && (
+          <div className="s-game__pass-overlay">
+            <button
+              id="btn-no-llevo"
+              className="s-game__pass-btn"
+              onClick={handlePass}
+            >
+              <span className="s-game__pass-icon">🚫</span>
+              <span className="s-game__pass-label">NO LLEVO</span>
+              <span className="s-game__pass-hint">
+                No tienes fichas para jugar
+              </span>
+            </button>
+          </div>
+        )}
 
         <div className="s-game__ov s-game__ov--l">
           <ScorePanel

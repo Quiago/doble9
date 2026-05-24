@@ -1,10 +1,15 @@
 // screens/Profile.tsx — (8) Profile. From design-reference/profile-settings.jsx.
 // AGENT: Frontend. Stats are mock until GET /users/:id/stats is wired.
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { ScreenWrap, NavHeader, Panel, GhostBtn } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
 import { dlog } from "@/lib/debug";
+import { useUserStore } from "@/store/userStore";
+import { api } from "@/services/api";
+import type { PlayerStats, MatchHistoryEntry } from "@shared/api";
+
 
 type Tab = "stats" | "achievements" | "history";
 
@@ -12,22 +17,6 @@ const TABS: Array<[Tab, string]> = [
   ["stats", "Estadísticas"],
   ["achievements", "Logros"],
   ["history", "Historial"],
-];
-
-const STAT_CARDS: Array<[string, string, string]> = [
-  ["234", "Partidas", "📊"],
-  ["156", "Victorias", "🏆"],
-  ["7", "Racha actual", "⚡"],
-  ["66%", "Win Rate", "📈"],
-];
-
-const DETAILS: Array<[string, string]> = [
-  ["Capicúas", "38"],
-  ["Pollonas", "12"],
-  ["Puntos totales", "48,240"],
-  ["Fichas jugadas", "2,180"],
-  ["Torneos ganados", "2"],
-  ["Mejor racha", "12"],
 ];
 
 const ACHIEVEMENTS = [
@@ -41,50 +30,124 @@ const ACHIEVEMENTS = [
   { icon: "👑", label: "Campeón Torneo", unlocked: false },
 ];
 
-const RECENT = [
-  { result: "Victoria", opponent: "Luisito", score: "78-42", mode: "Clásico", pts: "+180 XP", color: "#0E7A43" },
-  { result: "Derrota", opponent: "Maritza", score: "31-100", mode: "Parejas", pts: "-20 XP", color: "#E74C3C" },
-  { result: "Victoria", opponent: "El Tigre", score: "100-55", mode: "Rápido", pts: "+140 XP", color: "#0E7A43" },
-  { result: "Victoria", opponent: "Carlos", score: "100-72", mode: "Clásico", pts: "+160 XP", color: "#0E7A43" },
-];
 
 export default function Profile() {
   const go = useGameNav();
+  const { userId } = useParams<{ userId: string }>();
+  const me = useUserStore((s) => s.user);
+  const meStats = useUserStore((s) => s.stats);
+
+  const targetId = userId === "me" || !userId ? me?.id : userId;
+
+  const [stats, setStats] = useState<PlayerStats | null>(
+    targetId === me?.id ? meStats : null
+  );
+  const [history, setHistory] = useState<MatchHistoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("stats");
+
+  useEffect(() => {
+    if (!targetId) return;
+    setLoading(true);
+
+    const loadData = async () => {
+      try {
+        const [statsRes, historyRes] = await Promise.all([
+          api.userStats(targetId),
+          api.userHistory(targetId),
+        ]);
+        setStats(statsRes);
+        // Cast or map paginated items
+        setHistory(historyRes.items || []);
+        if (targetId === me?.id) {
+          useUserStore.getState().setStats(statsRes);
+        }
+      } catch (err) {
+        dlog("error", "failed to load profile data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
+  }, [targetId, me?.id]);
+
+  const username = (targetId === me?.id ? me?.username : stats?.userId === targetId ? "Jugador" : "Usuario") || "Jugador";
+  const initial = username.charAt(0).toUpperCase();
+
+  const gamesPlayed = stats?.gamesPlayed ?? 0;
+  const gamesWon = stats?.gamesWon ?? 0;
+  const currentStreak = stats?.currentStreak ?? 0;
+  const winRate = gamesPlayed > 0 ? `${Math.round((gamesWon / gamesPlayed) * 100)}%` : "0%";
+
+
+  const xp = stats?.xp ?? 0;
+  const level = stats?.level ?? 1;
+  const nextLevelXp = level * 1000;
+  const prevLevelXp = (level - 1) * 1000;
+  const levelProgress = xp - prevLevelXp;
+  const xpRequired = 1000;
+  const xpPercent = Math.max(0, Math.min(100, (levelProgress / xpRequired) * 100));
+
+  const cards: Array<[string, string, string]> = [
+    [String(gamesPlayed), "Partidas", "📊"],
+    [String(gamesWon), "Victorias", "🏆"],
+    [String(currentStreak), "Racha actual", "⚡"],
+    [winRate, "Win Rate", "📈"],
+  ];
+
+  const detailsList: Array<[string, string]> = [
+    ["Puntos totales", String(stats?.totalPoints ?? 0)],
+    ["Mejor racha", String(stats?.bestStreak ?? 0)],
+    ["Monedas", String(stats?.coins ?? 100)],
+    ["Nivel", String(stats?.level ?? 1)],
+    ["Puntos de liga", String(stats?.leaguePoints ?? 0)],
+  ];
+
+  if (loading && !stats) {
+    return (
+      <ScreenWrap>
+        <NavHeader title="CARGANDO PERFIL..." onBack={() => go("menu")} />
+        <div className="s-prof__body" style={{ justifyContent: "center", alignItems: "center" }}>
+          <div className="u-gold-glow" style={{ fontSize: "20px" }}>Cargando datos del jugador...</div>
+        </div>
+      </ScreenWrap>
+    );
+  }
 
   return (
     <ScreenWrap>
       <NavHeader
         title="MI PERFIL"
         onBack={() => go("menu")}
-        right={<GhostBtn size="sm" onClick={() => go("settings")}>EDITAR</GhostBtn>}
+        right={targetId === me?.id ? <GhostBtn size="sm" onClick={() => go("settings")}>EDITAR</GhostBtn> : undefined}
       />
       <div className="s-prof__body">
         <aside className="s-prof__left">
           <div className="s-prof__avatar">
             <img className="s-prof__ring" src={ASSETS.goldRing} alt="" aria-hidden />
-            <div className="s-prof__av">Y</div>
+            <div className="s-prof__av">{initial}</div>
           </div>
           <div className="s-prof__id">
-            <div className="s-prof__name">Jugador</div>
-            <div className="s-prof__handle">@jugador_pro · Desde 2024</div>
+            <div className="s-prof__name">{username}</div>
+            <div className="s-prof__handle">@{username.toLowerCase()} · Desde 2026</div>
           </div>
           <div className="s-prof__league">
             <span className="s-prof__league-ic">👑</span>
             <div>
-              <div className="s-prof__league-t">Gold I</div>
-              <div className="s-prof__league-s">Liga Dorada</div>
+              <div className="s-prof__league-t">{stats?.leagueTier ?? "Bronze"}</div>
+              <div className="s-prof__league-s">Liga de Dominó</div>
             </div>
           </div>
           <Panel className="s-prof__xp">
             <div className="s-prof__xp-row">
-              <span className="s-prof__xp-lvl">★ Nivel 12</span>
-              <span className="s-prof__xp-n">4,820 / 6,000 XP</span>
+              <span className="s-prof__xp-lvl">★ Nivel {level}</span>
+              <span className="s-prof__xp-n">{xp} XP</span>
             </div>
             <div className="s-prof__xp-track">
-              <div className="s-prof__xp-fill" style={{ width: "80%" }} />
+              <div className="s-prof__xp-fill" style={{ width: `${xpPercent}%` }} />
             </div>
-            <div className="s-prof__xp-next">1,180 XP para nivel 13</div>
+            <div className="s-prof__xp-next">{nextLevelXp - xp} XP para nivel {level + 1}</div>
           </Panel>
         </aside>
 
@@ -107,7 +170,7 @@ export default function Profile() {
           {tab === "stats" && (
             <div className="s-prof__stats" key="stats">
               <div className="s-prof__cards">
-                {STAT_CARDS.map(([val, label, icon]) => (
+                {cards.map(([val, label, icon]) => (
                   <Panel key={label} gold className="s-prof__card">
                     <div className="s-prof__card-ic">{icon}</div>
                     <div className="s-prof__card-v">{val}</div>
@@ -118,7 +181,7 @@ export default function Profile() {
               <Panel className="s-prof__details">
                 <div className="s-prof__section-h">DETALLES</div>
                 <div className="s-prof__detail-grid">
-                  {DETAILS.map(([k, v]) => (
+                  {detailsList.map(([k, v]) => (
                     <div key={k} className="s-prof__detail">
                       <span className="s-prof__detail-k">{k}</span>
                       <span className="s-prof__detail-v">{v}</span>
@@ -131,38 +194,52 @@ export default function Profile() {
 
           {tab === "achievements" && (
             <div className="s-prof__ach" key="ach">
-              {ACHIEVEMENTS.map((a) => (
-                <Panel key={a.label} className={`s-prof__badge${a.unlocked ? "" : " is-locked"}`}>
-                  <div className="s-prof__badge-ic">{a.icon}</div>
-                  <div className="s-prof__badge-l">{a.label}</div>
-                  {!a.unlocked && <div className="s-prof__badge-lock">Bloqueado</div>}
-                </Panel>
-              ))}
+              {ACHIEVEMENTS.map((a) => {
+                const unlocked = a.label === "Primera Victoria" ? (stats?.gamesWon ?? 0) >= 1 :
+                                 a.label === "Racha de 5" ? (stats?.bestStreak ?? 0) >= 5 :
+                                 a.label === "100 Partidas" ? (stats?.gamesPlayed ?? 0) >= 100 :
+                                 a.unlocked;
+                return (
+                  <Panel key={a.label} className={`s-prof__badge${unlocked ? "" : " is-locked"}`}>
+                    <div className="s-prof__badge-ic">{a.icon}</div>
+                    <div className="s-prof__badge-l">{a.label}</div>
+                    {!unlocked && <div className="s-prof__badge-lock">Bloqueado</div>}
+                  </Panel>
+                );
+              })}
             </div>
           )}
 
           {tab === "history" && (
             <div className="s-prof__hist" key="hist">
-              {RECENT.map((g, i) => (
-                <Panel key={i} className="s-prof__game">
-                  <div
-                    className="s-prof__game-r"
-                    style={{ background: `${g.color}18`, border: `1.5px solid ${g.color}44`, color: g.color }}
-                  >
-                    {g.result === "Victoria" ? "WIN" : "LOSS"}
-                  </div>
-                  <div className="s-prof__game-info">
-                    <div className="s-prof__game-vs">vs {g.opponent}</div>
-                    <div className="s-prof__game-meta">{g.mode} · {g.score}</div>
-                  </div>
-                  <div
-                    className="s-prof__game-pts"
-                    style={{ color: g.result === "Victoria" ? "var(--verde)" : "var(--error)" }}
-                  >
-                    {g.pts}
-                  </div>
-                </Panel>
-              ))}
+              {history.length === 0 ? (
+                <div className="s-lobby__empty">No hay partidas registradas en el historial</div>
+              ) : (
+                history.map((g, i) => {
+                  const isWin = g.result === "win";
+                  const color = isWin ? "var(--verde)" : "var(--error)";
+                  return (
+                    <Panel key={i} className="s-prof__game">
+                      <div
+                        className="s-prof__game-r"
+                        style={{ background: `${color}18`, border: `1.5px solid ${color}44`, color: color }}
+                      >
+                        {isWin ? "WIN" : "LOSS"}
+                      </div>
+                      <div className="s-prof__game-info">
+                        <div className="s-prof__game-vs">{g.mode.toUpperCase()} MATCH</div>
+                        <div className="s-prof__game-meta">Score: {g.finalScores.teamA} - {g.finalScores.teamB}</div>
+                      </div>
+                      <div
+                        className="s-prof__game-pts"
+                        style={{ color: color }}
+                      >
+                        {isWin ? "+150 XP" : "+50 XP"}
+                      </div>
+                    </Panel>
+                  );
+                })
+              )}
             </div>
           )}
         </section>

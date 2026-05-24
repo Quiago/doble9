@@ -65,3 +65,7 @@ export const useGameStore = create<GameSlice>((set) => ({
 
   reset: () => set({ game: null, chat: [], sinceActionAt: 0 }),
 }));
+
+if (typeof window !== "undefined") {
+  (window as any).useGameStore = useGameStore;
+}

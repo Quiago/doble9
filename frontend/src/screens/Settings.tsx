@@ -1,7 +1,7 @@
 // screens/Settings.tsx — (9) Settings. From design-reference/profile-settings.jsx.
 // AGENT: Frontend. SFX toggle is wired to the audio engine; rest is local UI
 // until a settings endpoint exists.
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import {
   ScreenWrap,
@@ -15,6 +15,9 @@ import {
 import { useGameNav } from "@/lib/nav";
 import { useAudio, useAuth } from "@/hooks";
 import { dlog } from "@/lib/debug";
+import { useUserStore } from "@/store/userStore";
+import { useUiStore } from "@/store/uiStore";
+import { api } from "@/services/api";
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -63,7 +66,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Row({ label, sub, right }: { label: string; sub?: string; right: ReactNode }) {
+function Row({ label, sub, right }: { label: string; sub?: string | ReactNode; right: ReactNode }) {
   return (
     <div className="s-set__row">
       <div>
@@ -86,6 +89,9 @@ export default function Settings() {
   const go = useGameNav();
   const { enabled: sfxEnabled, toggle: toggleSfx } = useAudio();
   const { logout } = useAuth();
+  const user = useUserStore((s) => s.user);
+  const setUser = useUserStore((s) => s.setUser);
+  const toast = useUiStore((s) => s.toast);
 
   const [music, setMusic] = useState(70);
   const [sfx, setSfx] = useState(85);
@@ -95,10 +101,69 @@ export default function Settings() {
   const [table, setTable] = useState("madera");
   const [lang, setLang] = useState("es");
 
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Initialize states when user settings are loaded
+  useEffect(() => {
+    if (user) {
+      setUsernameInput(user.username);
+      const settings = user.settings || {};
+      if (settings.music !== undefined) setMusic(Number(settings.music));
+      if (settings.sfx !== undefined) setSfx(Number(settings.sfx));
+      if (settings.anim !== undefined) setAnim(Boolean(settings.anim));
+      if (settings.notifs !== undefined) setNotifs(Boolean(settings.notifs));
+      if (QUALITIES.includes(settings.quality as any)) {
+        setQuality(settings.quality as any);
+      }
+      if (settings.table !== undefined) setTable(String(settings.table));
+      if (settings.lang !== undefined) setLang(String(settings.lang));
+    }
+  }, [user]);
+
   const onLogout = () => {
     dlog("ui", "settings logout");
     logout();
     go("landing");
+  };
+
+  const onSave = async () => {
+    setSaving(true);
+    try {
+      const updatedSettings = {
+        music,
+        sfx,
+        anim,
+        notifs,
+        quality,
+        table,
+        lang,
+      };
+
+      const payload: { username?: string; settings: Record<string, unknown> } = {
+        settings: updatedSettings,
+      };
+
+      if (usernameInput.trim() !== user?.username) {
+        if (usernameInput.trim().length < 3) {
+          toast("El nombre de usuario debe tener al menos 3 caracteres", "error");
+          setSaving(false);
+          return;
+        }
+        payload.username = usernameInput.trim();
+      }
+
+      const updatedUser = await api.updateMe(payload);
+      setUser(updatedUser);
+      toast("Configuración guardada correctamente", "success");
+      go("menu");
+    } catch (err: any) {
+      console.error("Error saving settings", err);
+      toast(err.message || "Error al guardar la configuración", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -184,7 +249,33 @@ export default function Settings() {
               </select>
             }
           />
-          <Row label="Nombre de usuario" sub="@jugador_pro" right={<GhostBtn size="sm">CAMBIAR</GhostBtn>} />
+          <Row
+            label="Nombre de usuario"
+            sub={isEditingUsername ? undefined : `@${user?.username || "jugador_pro"}`}
+            right={
+              isEditingUsername ? (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    className="s-set__input"
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                    autoFocus
+                  />
+                  <GhostBtn size="sm" onClick={() => setIsEditingUsername(false)}>
+                    LISTO
+                  </GhostBtn>
+                </div>
+              ) : (
+                <GhostBtn size="sm" onClick={() => {
+                  setUsernameInput(user?.username || "");
+                  setIsEditingUsername(true);
+                }}>
+                  CAMBIAR
+                </GhostBtn>
+              )
+            }
+          />
           <Divider gold />
           <Row label="Cerrar sesión" right={<RedBtn size="sm" onClick={onLogout}>SALIR</RedBtn>} />
           <Row
@@ -195,7 +286,9 @@ export default function Settings() {
         </Section>
 
         <div className="s-set__save">
-          <GoldBtn fullWidth onClick={() => go("menu")}>GUARDAR CAMBIOS</GoldBtn>
+          <GoldBtn fullWidth onClick={onSave} disabled={saving}>
+            {saving ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
+          </GoldBtn>
         </div>
       </div>
     </ScreenWrap>

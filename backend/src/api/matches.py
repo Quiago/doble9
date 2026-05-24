@@ -22,14 +22,18 @@ router = APIRouter(tags=["matches"])
 
 def _summary(m: MatchRow) -> MatchSummary:
     return MatchSummary(
-        id=m.id, room_code=m.room_code, mode=m.mode,
-        status=m.status, target_score=m.target_score,
+        id=m.id,
+        room_code=m.room_code,
+        mode=m.mode,
+        status=m.status,
+        target_score=m.target_score,
         created_at=m.created_at,
     )
 
 
 @router.post(
-    "/matches", response_model=MatchSummary,
+    "/matches",
+    response_model=MatchSummary,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_match(
@@ -46,9 +50,7 @@ async def create_match(
 
 
 @router.get("/matches/{match_id}", response_model=None)
-async def get_match(
-    match_id: str, current: CurrentUser, store: MatchStoreDep
-) -> dict[str, Any]:
+async def get_match(match_id: str, current: CurrentUser, store: MatchStoreDep) -> dict[str, Any]:
     snapshot = await store.load(match_id)
     if snapshot is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "match not found or ended")

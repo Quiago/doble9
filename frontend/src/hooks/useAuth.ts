@@ -14,6 +14,12 @@ export function useAuth() {
     async (data: LoginRequest) => {
       const res = await api.login(data);
       setAuth(res.token, res.user);
+      try {
+        const stats = await api.userStats(res.user.id);
+        useUserStore.getState().setStats(stats);
+      } catch (err) {
+        console.error("failed to fetch stats", err);
+      }
       return res.user;
     },
     [setAuth],
@@ -23,6 +29,12 @@ export function useAuth() {
     async (data: RegisterRequest) => {
       const res = await api.register(data);
       setAuth(res.token, res.user);
+      try {
+        const stats = await api.userStats(res.user.id);
+        useUserStore.getState().setStats(stats);
+      } catch (err) {
+        console.error("failed to fetch stats", err);
+      }
       return res.user;
     },
     [setAuth],
@@ -35,6 +47,12 @@ export function useAuth() {
     try {
       const me = await api.me();
       setAuth(t, me);
+      try {
+        const stats = await api.userStats(me.id);
+        useUserStore.getState().setStats(stats);
+      } catch (err) {
+        console.error("failed to fetch stats", err);
+      }
     } catch {
       logout();
     }

@@ -17,8 +17,11 @@ def _runtime(seed: int = 5) -> MatchRuntime:
         Player(3, "bot:3", "B3", is_bot=True),
     ]
     return MatchRuntime(
-        "m1", players, mode="solo",
-        rng=random.Random(seed), clock=lambda: 1000.0,
+        "m1",
+        players,
+        mode="solo",
+        rng=random.Random(seed),
+        clock=lambda: 1000.0,
     )
 
 
@@ -38,9 +41,17 @@ def test_start_drives_bots_until_human_turn() -> None:
     # Bots auto-played until it is the human's (seat 0) turn.
     assert rt.sm.turn_seat == 0
     # Public events were buffered (unless the human was the opener).
-    assert all(e["event"] in {
-        "tile_placed", "turn_changed", "special_play", "round_end", "match_end",
-    } for e in disp.public)
+    assert all(
+        e["event"]
+        in {
+            "tile_placed",
+            "turn_changed",
+            "special_play",
+            "round_end",
+            "match_end",
+        }
+        for e in disp.public
+    )
 
 
 def test_full_solo_game_reaches_match_end() -> None:

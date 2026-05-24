@@ -222,6 +222,7 @@ components:
         avatarUrl: { type: [string, "null"] }
         country: { type: [string, "null"], maxLength: 2 }
         createdAt: { type: string, format: date-time }
+        settings: { type: object, additionalProperties: true }
 
     AuthResponse:
       type: object

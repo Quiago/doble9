@@ -41,9 +41,7 @@ def create_access_token(
     settings = get_settings()
     now = datetime.now(UTC)
     minutes = (
-        expires_minutes
-        if expires_minutes is not None
-        else settings.access_token_expire_minutes
+        expires_minutes if expires_minutes is not None else settings.access_token_expire_minutes
     )
     payload: dict[str, Any] = {
         "sub": subject,

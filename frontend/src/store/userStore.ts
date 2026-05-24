@@ -10,6 +10,7 @@ interface UserSlice {
   user: User | null;
   stats: PlayerStats | null;
   setAuth: (token: string, user: User) => void;
+  setUser: (user: User) => void;
   setStats: (stats: PlayerStats) => void;
   logout: () => void;
 }
@@ -23,6 +24,8 @@ export const useUserStore = create<UserSlice>((set) => ({
     localStorage.setItem(TOKEN_KEY, token);
     set({ token, user });
   },
+
+  setUser: (user) => set({ user }),
 
   setStats: (stats) => set({ stats }),
 

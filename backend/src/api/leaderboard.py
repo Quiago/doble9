@@ -23,8 +23,11 @@ async def leaderboard(
     rows = await leaders.top(tier=tier.value if tier else None, limit=limit)
     return [
         LeaderboardEntry(
-            rank=r.rank, user_id=r.user_id, username=r.username,
-            avatar_url=r.avatar_url, league_tier=LeagueTier(r.league_tier),
+            rank=r.rank,
+            user_id=r.user_id,
+            username=r.username,
+            avatar_url=r.avatar_url,
+            league_tier=LeagueTier(r.league_tier),
             league_points=r.league_points,
         )
         for r in rows

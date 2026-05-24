@@ -32,6 +32,7 @@ class UserRow:
     avatar_url: str | None
     country: str | None
     created_at: str
+    settings: dict[str, object]
 
 
 @dataclass(slots=True)
@@ -92,17 +93,35 @@ class StoreItemRow:
 
 
 class UserRepository(Protocol):
-    async def create(
-        self, *, username: str, email: str, password_hash: str
-    ) -> UserRow: ...
+    async def create(self, *, username: str, email: str, password_hash: str) -> UserRow: ...
     async def get_by_id(self, user_id: str) -> UserRow | None: ...
     async def get_by_identifier(self, identifier: str) -> UserRow | None: ...
+    async def update(
+        self,
+        user_id: str,
+        *,
+        username: str | None = None,
+        email: str | None = None,
+        avatar_url: str | None = None,
+        country: str | None = None,
+        settings: dict[str, object] | None = None,
+    ) -> UserRow: ...
 
 
 class StatsRepository(Protocol):
     async def ensure(self, user_id: str) -> StatsRow: ...
     async def get(self, user_id: str) -> StatsRow | None: ...
     async def adjust_coins(self, user_id: str, delta: int) -> int: ...
+    async def update_after_match(
+        self,
+        user_id: str,
+        *,
+        won: bool,
+        points: int,
+        xp_gain: int,
+        coins_gain: int,
+        league_points_gain: int,
+    ) -> StatsRow: ...
 
 
 class MatchRepository(Protocol):
@@ -121,6 +140,14 @@ class MatchRepository(Protocol):
     async def history(
         self, user_id: str, *, page: int, page_size: int
     ) -> tuple[list[HistoryRow], int]: ...
+    async def finish_match(
+        self,
+        match_id: str,
+        *,
+        winner_team: str,
+        final_scores: dict[str, int],
+        status: str = "FINISHED",
+    ) -> None: ...
 
 
 class StoreRepository(Protocol):
@@ -129,6 +156,4 @@ class StoreRepository(Protocol):
 
 
 class LeaderboardRepository(Protocol):
-    async def top(
-        self, *, tier: str | None, limit: int
-    ) -> list[LeaderboardRow]: ...
+    async def top(self, *, tier: str | None, limit: int) -> list[LeaderboardRow]: ...

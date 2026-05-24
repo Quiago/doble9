@@ -75,17 +75,15 @@ def double_nine_holder(hands: Mapping[Seat, Sequence[Tile]]) -> Seat:
 
 def opening_move(hands: Mapping[Seat, Sequence[Tile]]) -> tuple[Seat, Tile | None]:
     """Round-1 salida (Cuban rule): the seat holding the **highest double**
-    opens and must play it. With 40 dealt / 15 in the boneyard the 9-9 is
-    often not dealt, so we generalise from "must hold 9-9" to "highest
-    double" (9-9 is simply the top of that order). If no double was dealt
-    at all, seat 0 opens with a free choice.
+    opens the game but can play any tile in their hand (no mandatory tile).
     """
     best: tuple[Seat, Tile] | None = None
     for seat, hand in hands.items():
         for tile in hand:
             if tile.is_double and (best is None or tile.high > best[1].high):
                 best = (seat, tile)
-    return best if best is not None else (0, None)
+    opener_seat = best[0] if best is not None else 0
+    return opener_seat, None
 
 
 def legal_moves(
@@ -121,9 +119,7 @@ def has_legal_move(
 
 def is_blocked(hands: Mapping[Seat, Sequence[Tile]], board: Board) -> bool:
     """Tranque: every seat still holding tiles has no legal move."""
-    return all(
-        len(hand) == 0 or not has_legal_move(hand, board) for hand in hands.values()
-    )
+    return all(len(hand) == 0 or not has_legal_move(hand, board) for hand in hands.values())
 
 
 def next_seat(seat: Seat) -> Seat:

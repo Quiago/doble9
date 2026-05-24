@@ -13,14 +13,14 @@ from src.game.tile import Tile
 
 def test_hand_and_team_points() -> None:
     hands = {
-        0: [Tile(3, 4)],            # 7
+        0: [Tile(3, 4)],  # 7
         1: [Tile(1, 1), Tile(0, 2)],  # 4
-        2: [Tile(5, 5)],            # 10
+        2: [Tile(5, 5)],  # 10
         3: [],
     }
     assert hand_points(hands[1]) == 4
     assert team_hand_points(hands, "teamA") == 17  # seats 0+2
-    assert team_hand_points(hands, "teamB") == 4   # seats 1+3
+    assert team_hand_points(hands, "teamB") == 4  # seats 1+3
 
 
 def test_resolve_domino_scores_opponents_only() -> None:
@@ -54,9 +54,9 @@ def test_special_plays() -> None:
     assert special_plays_for_move(
         Tile(2, 5), could_play_both_ends=True, hand_became_empty=True
     ) == ["CAPICUA"]
-    assert special_plays_for_move(
-        Tile(2, 5), could_play_both_ends=True, hand_became_empty=False
-    ) == []
+    assert (
+        special_plays_for_move(Tile(2, 5), could_play_both_ends=True, hand_became_empty=False) == []
+    )
     assert special_plays_for_move(
         Tile(9, 9), could_play_both_ends=True, hand_became_empty=True
     ) == ["DOUBLE_9", "CAPICUA"]

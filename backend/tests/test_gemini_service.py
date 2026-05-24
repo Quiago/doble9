@@ -35,13 +35,19 @@ async def test_generate_avatar_success() -> None:
             200,
             json={
                 "candidates": [
-                    {"content": {"parts": [
-                        {"text": "here you go"},
-                        {"inlineData": {
-                            "mimeType": "image/png",
-                            "data": base64.b64encode(_PNG).decode(),
-                        }},
-                    ]}}
+                    {
+                        "content": {
+                            "parts": [
+                                {"text": "here you go"},
+                                {
+                                    "inlineData": {
+                                        "mimeType": "image/png",
+                                        "data": base64.b64encode(_PNG).decode(),
+                                    }
+                                },
+                            ]
+                        }
+                    }
                 ]
             },
         )

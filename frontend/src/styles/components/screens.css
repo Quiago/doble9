@@ -1003,6 +1003,8 @@
 .s-set__pill--icon { font-family: var(--font-body); font-size: 12px; text-transform: none; font-weight: 500; }
 .s-set__pill.is-active { border-color: var(--dorado); background: rgba(212, 175, 55, 0.15); color: var(--dorado); }
 .s-set__select { background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: var(--radius-md); padding: 7px 12px; color: var(--crema); font-family: var(--font-body); font-size: 13px; cursor: pointer; outline: none; }
+.s-set__input { background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: var(--radius-md); padding: 7px 12px; color: var(--crema); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color 0.2s; width: 180px; }
+.s-set__input:focus { border-color: var(--dorado); }
 .s-set__save { padding-bottom: 24px; }
 
 /* ── Store (10) ── */
@@ -1112,3 +1114,51 @@
 .s-tour__pcard-ic { font-size: 36px; margin-bottom: 8px; }
 .s-tour__pcard-place { font-family: var(--font-heading); font-weight: 900; font-size: 14px; margin-bottom: 6px; }
 .s-tour__pcard-reward { font-size: 12px; color: rgba(247, 241, 227, 0.7); font-family: var(--font-body); line-height: 1.4; }
+
+/* ── Toast Container & Toast ── */
+.c-toast-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.c-toast {
+  pointer-events: auto;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--crema);
+  backdrop-filter: blur(8px);
+  border: 1px solid;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.c-toast--info {
+  background: rgba(0, 0, 0, 0.85);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+.c-toast--success {
+  background: rgba(14, 122, 67, 0.9);
+  border-color: var(--verde);
+}
+.c-toast--error {
+  background: rgba(192, 57, 43, 0.9);
+  border-color: var(--error);
+}
+@keyframes toastSlideIn {
+  0% { transform: translateY(-40px) scale(0.9); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+

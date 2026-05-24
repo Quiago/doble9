@@ -19,6 +19,24 @@ export class BoardGroup {
     this.container.setPosition(x, y);
   }
 
+  getLeftEndWorldPos(): { x: number; y: number } | null {
+    if (this.container.list.length === 0) return null;
+    const firstChild = this.container.list[0] as Phaser.GameObjects.Container;
+    return {
+      x: this.container.x + firstChild.x,
+      y: this.container.y + firstChild.y,
+    };
+  }
+
+  getRightEndWorldPos(): { x: number; y: number } | null {
+    if (this.container.list.length === 0) return null;
+    const lastChild = this.container.list[this.container.list.length - 1] as Phaser.GameObjects.Container;
+    return {
+      x: this.container.x + lastChild.x,
+      y: this.container.y + lastChild.y,
+    };
+  }
+
   /** Rebuild from authoritative board; pop the tile just laid on `side`. */
   sync(board: Board, justPlacedSide?: BoardSide) {
     this.container.removeAll(true);

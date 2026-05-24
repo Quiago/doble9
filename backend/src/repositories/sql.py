@@ -9,6 +9,8 @@ Architect migration 0001 via `src.models`.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
+from typing import cast
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -31,26 +33,41 @@ from src.repositories.protocols import (
 
 def _user_row(u: User) -> UserRow:
     return UserRow(
-        id=str(u.id), username=u.username, email=u.email,
-        password_hash=u.password_hash, avatar_url=u.avatar_url,
-        country=u.country, created_at=u.created_at.isoformat(),
+        id=str(u.id),
+        username=u.username,
+        email=u.email,
+        password_hash=u.password_hash,
+        avatar_url=u.avatar_url,
+        country=u.country,
+        created_at=u.created_at.isoformat(),
+        settings=u.settings,
     )
 
 
 def _stats_row(s: PlayerStats) -> StatsRow:
     return StatsRow(
-        user_id=str(s.user_id), games_played=s.games_played,
-        games_won=s.games_won, games_lost=s.games_lost,
-        total_points=s.total_points, current_streak=s.current_streak,
-        best_streak=s.best_streak, league_tier=s.league_tier,
-        league_points=s.league_points, coins=s.coins, xp=s.xp, level=s.level,
+        user_id=str(s.user_id),
+        games_played=s.games_played,
+        games_won=s.games_won,
+        games_lost=s.games_lost,
+        total_points=s.total_points,
+        current_streak=s.current_streak,
+        best_streak=s.best_streak,
+        league_tier=s.league_tier,
+        league_points=s.league_points,
+        coins=s.coins,
+        xp=s.xp,
+        level=s.level,
     )
 
 
 def _match_row(m: Match) -> MatchRow:
     return MatchRow(
-        id=str(m.id), room_code=m.room_code, mode=m.mode,
-        status=m.status, target_score=m.target_score,
+        id=str(m.id),
+        room_code=m.room_code,
+        mode=m.mode,
+        status=m.status,
+        target_score=m.target_score,
         created_at=m.created_at.isoformat(),
     )
 
@@ -73,11 +90,38 @@ class SqlUserRepository:
         return _user_row(u) if u else None
 
     async def get_by_identifier(self, identifier: str) -> UserRow | None:
-        stmt = select(User).where(
-            (User.username == identifier) | (User.email == identifier)
-        )
+        stmt = select(User).where((User.username == identifier) | (User.email == identifier))
         u = (await self._s.execute(stmt)).scalar_one_or_none()
         return _user_row(u) if u else None
+
+    async def update(
+        self,
+        user_id: str,
+        *,
+        username: str | None = None,
+        email: str | None = None,
+        avatar_url: str | None = None,
+        country: str | None = None,
+        settings: dict[str, object] | None = None,
+    ) -> UserRow:
+        u = await self._s.get(User, uuid.UUID(user_id))
+        if u is None:
+            raise NotFoundError("user not found")
+        if username is not None:
+            u.username = username
+        if email is not None:
+            u.email = email
+        if avatar_url is not None:
+            u.avatar_url = avatar_url
+        if country is not None:
+            u.country = country
+        if settings is not None:
+            u.settings = settings
+        try:
+            await self._s.flush()
+        except IntegrityError as exc:
+            raise ConflictError("username or email already in use") from exc
+        return _user_row(u)
 
 
 class SqlStatsRepository:
@@ -109,25 +153,68 @@ class SqlStatsRepository:
         await self._s.flush()
         return s.coins
 
+    async def update_after_match(
+        self,
+        user_id: str,
+        *,
+        won: bool,
+        points: int,
+        xp_gain: int,
+        coins_gain: int,
+        league_points_gain: int,
+    ) -> StatsRow:
+        uid = uuid.UUID(user_id)
+        s = await self._s.get(PlayerStats, uid)
+        if s is None:
+            s = PlayerStats(user_id=uid)
+            self._s.add(s)
+            await self._s.flush()
+        s.games_played += 1
+        s.total_points += points
+        if won:
+            s.games_won += 1
+            s.current_streak += 1
+            if s.current_streak > s.best_streak:
+                s.best_streak = s.current_streak
+        else:
+            s.games_lost += 1
+            s.current_streak = 0
+        s.xp += xp_gain
+        s.coins += coins_gain
+        s.league_points = max(0, s.league_points + league_points_gain)
+        s.level = 1 + (s.xp // 1000)
+        await self._s.flush()
+        return _stats_row(s)
+
 
 class SqlMatchRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._s = session
 
     async def create(
-        self, *, mode: str, target_score: int, room_code: str,
-        host_user_id: str, fill_with_bots: bool,
+        self,
+        *,
+        mode: str,
+        target_score: int,
+        room_code: str,
+        host_user_id: str,
+        fill_with_bots: bool,
     ) -> MatchRow:
         m = Match(
-            room_code=room_code, mode=mode, status="LOBBY",
+            room_code=room_code,
+            mode=mode,
+            status="LOBBY",
             target_score=target_score,
         )
         self._s.add(m)
         await self._s.flush()
         self._s.add(
             MatchPlayer(
-                match_id=m.id, user_id=uuid.UUID(host_user_id),
-                team="teamA", seat=0, is_bot=False,
+                match_id=m.id,
+                user_id=uuid.UUID(host_user_id),
+                team="teamA",
+                seat=0,
+                is_bot=False,
             )
         )
         await self._s.flush()
@@ -148,17 +235,17 @@ class SqlMatchRepository:
             raise NotFoundError("match not found")
         count = (
             await self._s.execute(
-                select(func.count())
-                .select_from(MatchPlayer)
-                .where(MatchPlayer.match_id == m.id)
+                select(func.count()).select_from(MatchPlayer).where(MatchPlayer.match_id == m.id)
             )
         ).scalar_one()
         seat = int(count)
         self._s.add(
             MatchPlayer(
-                match_id=m.id, user_id=uuid.UUID(user_id),
+                match_id=m.id,
+                user_id=uuid.UUID(user_id),
                 team="teamA" if seat % 2 == 0 else "teamB",
-                seat=seat, is_bot=False,
+                seat=seat,
+                is_bot=False,
             )
         )
         await self._s.flush()
@@ -173,15 +260,11 @@ class SqlMatchRepository:
             .where(MatchPlayer.user_id == uid, Match.status == "FINISHED")
         )
         total = (
-            await self._s.execute(
-                select(func.count()).select_from(base.subquery())
-            )
+            await self._s.execute(select(func.count()).select_from(base.subquery()))
         ).scalar_one()
         rows = (
             await self._s.execute(
-                base.order_by(Match.ended_at.desc())
-                .offset((page - 1) * page_size)
-                .limit(page_size)
+                base.order_by(Match.ended_at.desc()).offset((page - 1) * page_size).limit(page_size)
             )
         ).all()
         items: list[HistoryRow] = []
@@ -190,7 +273,8 @@ class SqlMatchRepository:
             result = "win" if m.winner_team == team else "loss"
             items.append(
                 HistoryRow(
-                    match_id=str(m.id), mode=m.mode,
+                    match_id=str(m.id),
+                    mode=m.mode,
                     winner_team=m.winner_team,
                     final_scores={
                         "teamA": int(scores.get("teamA", 0)),
@@ -201,6 +285,23 @@ class SqlMatchRepository:
                 )
             )
         return items, int(total)
+
+    async def finish_match(
+        self,
+        match_id: str,
+        *,
+        winner_team: str,
+        final_scores: dict[str, int],
+        status: str = "FINISHED",
+    ) -> None:
+        m = await self._s.get(Match, uuid.UUID(match_id))
+        if m is None:
+            raise NotFoundError("match not found")
+        m.status = status
+        m.winner_team = winner_team
+        m.final_scores = cast(dict[str, object], final_scores)
+        m.ended_at = datetime.utcnow()
+        await self._s.flush()
 
 
 class SqlStoreRepository:
@@ -215,16 +316,19 @@ class SqlStoreRepository:
 
             keys = (
                 await self._s.execute(
-                    select(Inventory.item_key).where(
-                        Inventory.user_id == uuid.UUID(user_id)
-                    )
+                    select(Inventory.item_key).where(Inventory.user_id == uuid.UUID(user_id))
                 )
             ).scalars()
             owned = set(keys)
         return [
             StoreItemRow(
-                i.key, i.type, i.name, i.description, i.price_coins,
-                i.preview_url, i.key in owned,
+                i.key,
+                i.type,
+                i.name,
+                i.description,
+                i.price_coins,
+                i.preview_url,
+                i.key in owned,
             )
             for i in STORE_CATALOG
         ]
@@ -249,7 +353,9 @@ class SqlStoreRepository:
         self._s.add(
             Inventory(
                 user_id=uuid.UUID(user_id),
-                item_type=item.type, item_key=item_key, equipped=False,
+                item_type=item.type,
+                item_key=item_key,
+                equipped=False,
             )
         )
         await self._s.flush()
@@ -263,8 +369,11 @@ class SqlLeaderboardRepository:
     async def top(self, *, tier: str | None, limit: int) -> list[LeaderboardRow]:
         stmt = (
             select(
-                User.id, User.username, User.avatar_url,
-                PlayerStats.league_tier, PlayerStats.league_points,
+                User.id,
+                User.username,
+                User.avatar_url,
+                PlayerStats.league_tier,
+                PlayerStats.league_points,
             )
             .join(PlayerStats, PlayerStats.user_id == User.id)
             .order_by(PlayerStats.league_points.desc())
@@ -275,8 +384,12 @@ class SqlLeaderboardRepository:
         rows = (await self._s.execute(stmt)).all()
         return [
             LeaderboardRow(
-                rank=i, user_id=str(uid), username=uname,
-                avatar_url=avatar, league_tier=lt, league_points=lp,
+                rank=i,
+                user_id=str(uid),
+                username=uname,
+                avatar_url=avatar,
+                league_tier=lt,
+                league_points=lp,
             )
             for i, (uid, uname, avatar, lt, lp) in enumerate(rows, start=1)
         ]

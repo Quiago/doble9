@@ -67,6 +67,9 @@ export const api = {
   login: (data: LoginRequest) =>
     request<AuthResponse>("/auth/login", body(data)),
   me: () => request<User>("/auth/me"),
+  updateMe: (data: { username?: string; email?: string; settings?: Record<string, unknown> }) =>
+    request<User>("/users/me", { method: "PUT", body: JSON.stringify(data) }),
+
 
   // ── Matches ──
   createMatch: (data: MatchCreateRequest) =>

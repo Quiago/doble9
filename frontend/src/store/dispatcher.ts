@@ -153,3 +153,7 @@ class Dispatcher {
 }
 
 export const dispatcher = new Dispatcher();
+if (typeof window !== "undefined") {
+  (window as any).dispatcher = dispatcher;
+  (window as any).A = A;
+}

@@ -16,6 +16,8 @@ import Settings from "@/screens/Settings";
 import Store from "@/screens/Store";
 import Tournament from "@/screens/Tournament";
 
+import { ToastContainer } from "@/components";
+
 // AGENT: Frontend — route table mirrors CLAUDE.md §4.3 screen inventory.
 function RouteLogger() {
   const loc = useLocation();
@@ -39,6 +41,7 @@ export default function App() {
     <>
       <RouteLogger />
       <AuthBootstrap />
+      <ToastContainer />
       <Routes>
       <Route path="/" element={<Splash />} />
       <Route path="/welcome" element={<Landing />} />

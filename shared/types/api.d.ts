@@ -15,7 +15,9 @@ export interface User {
   avatarUrl: string | null;
   country: string | null;
   createdAt: Timestamp;
+  settings?: Record<string, any>;
 }
+
 
 export interface AuthResponse {
   token: string;

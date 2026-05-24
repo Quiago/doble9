@@ -20,19 +20,22 @@ router = APIRouter(tags=["auth"])
 
 def _to_user(row: UserRow) -> User:
     return User(
-        id=row.id, username=row.username, email=row.email,
-        avatar_url=row.avatar_url, country=row.country,
+        id=row.id,
+        username=row.username,
+        email=row.email,
+        avatar_url=row.avatar_url,
+        country=row.country,
         created_at=row.created_at,
+        settings=row.settings,
     )
 
 
 @router.post(
-    "/auth/register", response_model=AuthResponse,
+    "/auth/register",
+    response_model=AuthResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def register(
-    body: RegisterRequest, users: UserRepoDep, stats: StatsRepoDep
-) -> AuthResponse:
+async def register(body: RegisterRequest, users: UserRepoDep, stats: StatsRepoDep) -> AuthResponse:
     try:
         row = await users.create(
             username=body.username,
@@ -53,9 +56,7 @@ async def login(body: LoginRequest, users: UserRepoDep) -> AuthResponse:
         or row.password_hash is None
         or not verify_password(body.password, row.password_hash)
     ):
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, "invalid credentials"
-        )
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid credentials")
     return AuthResponse(token=create_access_token(row.id), user=_to_user(row))
 
 

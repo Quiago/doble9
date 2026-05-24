@@ -1,6 +1,7 @@
 // screens/Setup.tsx — (4) Single Player Setup. From setup-lobby.jsx.
 // AGENT: Frontend. Selections are local UI only; backend creates the match.
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ScreenWrap,
   NavHeader,
@@ -12,6 +13,8 @@ import {
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
 import { dlog } from "@/lib/debug";
+import { api } from "@/services/api";
+
 
 const DIFFS = [
   { id: "facil", label: "Fácil", color: "#0E7A43" },
@@ -29,11 +32,32 @@ const SEAT_POS = ["s-setup__seat--top", "s-setup__seat--left", "s-setup__seat--r
 
 export default function Setup() {
   const go = useGameNav();
+  const navigate = useNavigate();
   const [players, setPlayers] = useState(4);
   const [difficulty, setDiff] = useState("medio");
   const [mode, setMode] = useState("clasico");
   const [points, setPoints] = useState(100);
   const [tileset, setTileset] = useState("doble9");
+  const [loading, setLoading] = useState(false);
+
+  const handleStartGame = async () => {
+    setLoading(true);
+    try {
+      const match = await api.createMatch({
+        mode: "solo",
+        targetScore: points,
+        fillWithBots: true,
+      });
+      dlog("ui", `created solo match id=${match.id}`);
+      navigate(`/play/match/${match.id}`);
+    } catch (err) {
+      dlog("error", "failed to create match", err);
+      go("game");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const summary: Array<[string, string]> = [
     ["Jugadores", `${players} (vs CPU)`],
@@ -189,9 +213,10 @@ export default function Setup() {
             size="lg"
             fullWidth
             style={{ fontSize: 18, padding: "16px 0" }}
-            onClick={() => go("game")}
+            onClick={handleStartGame}
+            disabled={loading}
           >
-            ¡A JUGAR!
+            {loading ? "CREANDO PARTIDA..." : "¡A JUGAR!"}
           </GoldBtn>
           <ChromaImg className="s-setup__manolito" src={ASSETS.manolitoHold} />
         </div>

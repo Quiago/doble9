@@ -43,9 +43,7 @@ class GeneratedImage:
         return f"data:{self.mime_type};base64,{b64}"
 
 
-def build_avatar_prompt(
-    style: str, expression: str, *, character: str = "Manolito"
-) -> str:
+def build_avatar_prompt(style: str, expression: str, *, character: str = "Manolito") -> str:
     """Style-anchored prompt for a consistent Cuban-Muppet avatar."""
     return (
         f"Generate a Muppet-style Cuban puppet character named {character}. "
@@ -64,9 +62,7 @@ class GeminiAvatarService:
         model: str = DEFAULT_MODEL,
         base_url: str = GEMINI_BASE_URL,
     ) -> None:
-        self._api_key = (
-            api_key if api_key is not None else get_settings().gemini_api_key
-        )
+        self._api_key = api_key if api_key is not None else get_settings().gemini_api_key
         self._client = client
         self._owns_client = client is None
         self._model = model
@@ -83,9 +79,7 @@ class GeminiAvatarService:
 
         url = f"{self._base_url}/models/{self._model}:generateContent"
         payload: dict[str, Any] = {
-            "contents": [
-                {"parts": [{"text": build_avatar_prompt(style, expression)}]}
-            ],
+            "contents": [{"parts": [{"text": build_avatar_prompt(style, expression)}]}],
             "generationConfig": {"responseModalities": ["Text", "Image"]},
         }
         client = await self._http()
@@ -102,9 +96,7 @@ class GeminiAvatarService:
             raise GeminiError(f"Gemini request failed: {exc}") from exc
 
         if resp.status_code >= 400:
-            raise GeminiError(
-                f"Gemini HTTP {resp.status_code}: {resp.text[:200]}"
-            )
+            raise GeminiError(f"Gemini HTTP {resp.status_code}: {resp.text[:200]}")
         return _extract_image(resp.json())
 
     async def aclose(self) -> None:

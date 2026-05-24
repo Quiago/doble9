@@ -55,9 +55,7 @@ class Settings(BaseSettings):
     # Auth (JWT)
     secret_key: str = Field(default="change-me-in-production", alias="SECRET_KEY")
     algorithm: str = Field(default="HS256", alias="ALGORITHM")
-    access_token_expire_minutes: int = Field(
-        default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES"
-    )
+    access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
 
     # External services
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")

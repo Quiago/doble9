@@ -22,9 +22,7 @@ def test_pass_when_blocked() -> None:
 def test_respects_mandatory_opening() -> None:
     hand = [Tile(9, 9), Tile(3, 4), Tile(0, 1)]
     for diff in BotDifficulty:
-        move = choose_play(
-            hand, Board(), mandatory_tile=Tile(9, 9), difficulty=diff
-        )
+        move = choose_play(hand, Board(), mandatory_tile=Tile(9, 9), difficulty=diff)
         assert move is not None and move[0] == Tile(9, 9)
 
 
@@ -38,9 +36,7 @@ def test_easy_returns_a_legal_move() -> None:
     board = Board()
     board.place(Tile(3, 5), "right", by_seat=0)
     hand = [Tile(3, 9), Tile(5, 7), Tile(1, 2)]
-    move = choose_play(
-        hand, board, difficulty=BotDifficulty.EASY, rng=random.Random(0)
-    )
+    move = choose_play(hand, board, difficulty=BotDifficulty.EASY, rng=random.Random(0))
     assert move is not None
     tile, side = move
     assert board.can_place(tile, side) and tile in hand
@@ -74,9 +70,7 @@ def test_bot_take_turn_guards() -> None:
 
 
 def test_all_bot_match_terminates() -> None:
-    sm = MatchStateMachine(
-        "m", _players(), rng=random.Random(2024), clock=lambda: 1000.0
-    )
+    sm = MatchStateMachine("m", _players(), rng=random.Random(2024), clock=lambda: 1000.0)
     sm.start()
     rng = random.Random(7)
     for _ in range(20_000):

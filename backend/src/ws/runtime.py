@@ -75,8 +75,11 @@ class MatchRuntime:
         self._store = store
         self._difficulty = bot_difficulty
         self.sm = MatchStateMachine(
-            match_id, players, target_score=target_score,
-            rng=self._rng, clock=clock,
+            match_id,
+            players,
+            target_score=target_score,
+            rng=self._rng,
+            clock=clock,
         )
         self.sessions: dict[str, str] = {}  # sid -> user_id
         self._buffer: deque[Envelope] = deque(maxlen=BUFFER_SIZE)
@@ -133,11 +136,7 @@ class MatchRuntime:
     def join_events(self, user_id: str, since: int | None) -> list[Envelope]:
         """Delta replay if the anchor is still inside the buffer, else a
         full private snapshot (ADR-004)."""
-        if (
-            since is not None
-            and self._buffer
-            and self._buffer[0]["timestamp"] <= since
-        ):
+        if since is not None and self._buffer and self._buffer[0]["timestamp"] <= since:
             return [e for e in self._buffer if e["timestamp"] > since]
         return [self.snapshot_envelope(user_id)]
 
@@ -149,41 +148,72 @@ class MatchRuntime:
         payload = result.payload
 
         if ev == "tile_placed":
-            out.append(self._env("tile_placed", {
-                "bySeat": payload["bySeat"],
-                "tile": payload["tile"],
-                "side": payload["side"],
-                "board": payload["board"],
-            }))
+            out.append(
+                self._env(
+                    "tile_placed",
+                    {
+                        "bySeat": payload["bySeat"],
+                        "tile": payload["tile"],
+                        "side": payload["side"],
+                        "board": payload["board"],
+                    },
+                )
+            )
             for sp in result.specials:
-                out.append(self._env("special_play", {
-                    "type": sp, "bySeat": payload["bySeat"],
-                }))
+                out.append(
+                    self._env(
+                        "special_play",
+                        {
+                            "type": sp,
+                            "bySeat": payload["bySeat"],
+                        },
+                    )
+                )
             out.append(self._env("turn_changed", {"turn": payload["turn"]}))
         elif ev == "turn_changed":
             out.append(self._env("turn_changed", {"turn": payload["turn"]}))
         elif ev == "round_end":
-            out.append(self._env("round_end", {
-                "points": payload["points"],
-                "winnerTeam": payload["winnerTeam"],
-                "scores": payload["scores"],
-            }))
+            out.append(
+                self._env(
+                    "round_end",
+                    {
+                        "points": payload["points"],
+                        "winnerTeam": payload["winnerTeam"],
+                        "scores": payload["scores"],
+                    },
+                )
+            )
             for sp in result.specials:
-                out.append(self._env("special_play", {
-                    "type": sp,
-                    "bySeat": acting_seat if acting_seat is not None else 0,
-                }))
+                out.append(
+                    self._env(
+                        "special_play",
+                        {
+                            "type": sp,
+                            "bySeat": acting_seat if acting_seat is not None else 0,
+                        },
+                    )
+                )
             resend = True
         elif ev == "match_end":
-            out.append(self._env("match_end", {
-                "winnerTeam": payload["winnerTeam"],
-                "scores": payload["scores"],
-            }))
+            out.append(
+                self._env(
+                    "match_end",
+                    {
+                        "winnerTeam": payload["winnerTeam"],
+                        "scores": payload["scores"],
+                    },
+                )
+            )
             for sp in result.specials:
-                out.append(self._env("special_play", {
-                    "type": sp,
-                    "bySeat": acting_seat if acting_seat is not None else 0,
-                }))
+                out.append(
+                    self._env(
+                        "special_play",
+                        {
+                            "type": sp,
+                            "bySeat": acting_seat if acting_seat is not None else 0,
+                        },
+                    )
+                )
             resend = True
         elif ev == "game_state":
             resend = True  # e.g. start(): everyone needs fresh hands
@@ -199,9 +229,7 @@ class MatchRuntime:
                 return
             if not self.sm.players[seat].is_bot:
                 return
-            res = bot_take_turn(
-                self.sm, seat, difficulty=self._difficulty, rng=self._rng
-            )
+            res = bot_take_turn(self.sm, seat, difficulty=self._difficulty, rng=self._rng)
             if not res.success:  # pragma: no cover - bot never plays illegally
                 return
             envs, resend = self._translate(res, acting_seat=seat)
@@ -221,9 +249,13 @@ class MatchRuntime:
         disp = Dispatch()
         result = self.sm.start()
         if not result.success:
-            disp.error = self._env("error", {
-                "code": "bad_state", "message": result.error_message or "cannot start",
-            })
+            disp.error = self._env(
+                "error",
+                {
+                    "code": "bad_state",
+                    "message": result.error_message or "cannot start",
+                },
+            )
             return disp
         _, resend = self._translate(result, acting_seat=None)
         disp.resend_state = resend
@@ -239,10 +271,13 @@ class MatchRuntime:
         seat = self._seat_of_user(user_id)
         result = self.sm.play_tile(user_id, tile_id, side)  # type: ignore[arg-type]
         if not result.success:
-            disp.error = self._env("error", {
-                "code": "illegal_move",
-                "message": result.error_message or "illegal move",
-            })
+            disp.error = self._env(
+                "error",
+                {
+                    "code": "illegal_move",
+                    "message": result.error_message or "illegal move",
+                },
+            )
             return disp
         envs, resend = self._translate(result, acting_seat=seat)
         disp.public.extend(envs)
@@ -257,10 +292,13 @@ class MatchRuntime:
         seat = self._seat_of_user(user_id)
         result = self.sm.pass_turn(user_id)
         if not result.success:
-            disp.error = self._env("error", {
-                "code": "illegal_move",
-                "message": result.error_message or "cannot pass",
-            })
+            disp.error = self._env(
+                "error",
+                {
+                    "code": "illegal_move",
+                    "message": result.error_message or "cannot pass",
+                },
+            )
             return disp
         envs, resend = self._translate(result, acting_seat=seat)
         disp.public.extend(envs)
@@ -272,13 +310,22 @@ class MatchRuntime:
         disp = Dispatch()
         seat = self._seat_of_user(user_id)
         if seat is None:
-            disp.error = self._env("error", {
-                "code": "forbidden", "message": "not a participant",
-            })
+            disp.error = self._env(
+                "error",
+                {
+                    "code": "forbidden",
+                    "message": "not a participant",
+                },
+            )
             return disp
-        env = self._env("chat_message", {
-            "bySeat": seat, "userId": user_id, "message": message[:240],
-        })
+        env = self._env(
+            "chat_message",
+            {
+                "bySeat": seat,
+                "userId": user_id,
+                "message": message[:240],
+            },
+        )
         self._publish(env)
         disp.public.append(env)
         return disp
@@ -293,10 +340,14 @@ class MatchRuntime:
         seat = self._seat_of_user(user_id)
         if seat is None:
             return None
-        env = self._env("player_disconnected", {
-            "seat": seat, "userId": user_id,
-            "timeoutSeconds": DISCONNECT_GRACE_SECONDS,
-        })
+        env = self._env(
+            "player_disconnected",
+            {
+                "seat": seat,
+                "userId": user_id,
+                "timeoutSeconds": DISCONNECT_GRACE_SECONDS,
+            },
+        )
         self._publish(env)
         return env
 

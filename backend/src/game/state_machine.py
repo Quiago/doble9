@@ -111,6 +111,7 @@ class GameStateDict(TypedDict):
     targetScore: int
     boneyardCount: int
     lastActionAt: int
+    canPass: bool
 
 
 class MatchError(Exception):
@@ -218,8 +219,7 @@ class MatchStateMachine:
             return Result.error(f"tile {tile_id} not in hand")
         if self._mandatory_tile is not None and tile != self._mandatory_tile:
             return Result.error(
-                f"opening move must be the highest double "
-                f"({self._mandatory_tile.id})"
+                f"opening move must be the highest double ({self._mandatory_tile.id})"
             )
         if not self.board.can_place(tile, side):
             return Result.error(f"illegal move: {tile_id} cannot connect to {side}")
@@ -273,9 +273,7 @@ class MatchStateMachine:
             return Result.error("not a participant in this match")
         if seat != self.turn_seat:
             return Result.error("not your turn")
-        if has_legal_move(
-            self.hands[seat], self.board, mandatory_tile=self._mandatory_tile
-        ):
+        if has_legal_move(self.hands[seat], self.board, mandatory_tile=self._mandatory_tile):
             return Result.error("you have a legal move; cannot pass")
 
         self._passes_in_row += 1
@@ -283,9 +281,7 @@ class MatchStateMachine:
 
         if is_blocked(self.hands, self.board):
             outcome = resolve_tranque(self.hands, self._last_placed_seat)
-            return self._apply_round_outcome(
-                outcome.winner_team, outcome.points, "TRANQUE", ()
-            )
+            return self._apply_round_outcome(outcome.winner_team, outcome.points, "TRANQUE", ())
 
         self.turn_seat = next_seat(seat)
         return Result.ok("turn_changed", {"turn": self._turn_info()})
@@ -365,10 +361,21 @@ class MatchStateMachine:
         """Authoritative `GameState`. Private `hand` is only the recipient's
         own tiles (empty list for spectators / other players)."""
         hand: list[str] = []
+        can_pass = False
         if for_user_id is not None:
             seat = self._seat_of(for_user_id)
             if seat is not None:
                 hand = [t.id for t in self.hands.get(seat, [])]
+                # canPass: it's my turn AND I have no legal move
+                if (
+                    self.status == "PLAYING"
+                    and self.turn_seat == seat
+                    and not has_legal_move(
+                        self.hands[seat], self.board,
+                        mandatory_tile=self._mandatory_tile,
+                    )
+                ):
+                    can_pass = True
         return {
             "matchId": self.match_id,
             "status": self.status,
@@ -381,4 +388,5 @@ class MatchStateMachine:
             "targetScore": self.target_score,
             "boneyardCount": len(self.boneyard),
             "lastActionAt": self.last_action_at,
+            "canPass": can_pass,
         }

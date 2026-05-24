@@ -22,9 +22,13 @@ async def list_items(current: CurrentUser, store: StoreRepoDep) -> list[StoreIte
     items = await store.list_items(current.id)
     return [
         StoreItem(
-            key=i.key, type=StoreItemType(i.type), name=i.name,
-            description=i.description, price_coins=i.price_coins,
-            preview_url=i.preview_url, owned=i.owned,
+            key=i.key,
+            type=StoreItemType(i.type),
+            name=i.name,
+            description=i.description,
+            price_coins=i.price_coins,
+            preview_url=i.preview_url,
+            owned=i.owned,
         )
         for i in items
     ]
@@ -39,7 +43,5 @@ async def purchase(
     except NotFoundError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     except InsufficientCoinsError as exc:
-        raise HTTPException(
-            status.HTTP_402_PAYMENT_REQUIRED, str(exc)
-        ) from exc
+        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, str(exc)) from exc
     return PurchaseResponse(item_key=body.item_key, coins_remaining=remaining)

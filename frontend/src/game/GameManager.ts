@@ -25,6 +25,9 @@ export class GameManager {
       },
       render: { antialias: true, powerPreference: "high-performance" },
     });
+    if (typeof window !== "undefined") {
+      (window as any).phaserGame = this.game;
+    }
   }
 
   destroy() {

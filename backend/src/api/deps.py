@@ -61,6 +61,7 @@ MatchRepoDep = Annotated[MatchRepository, Depends(get_match_repo)]
 StoreRepoDep = Annotated[StoreRepository, Depends(get_store_repo)]
 LeaderboardRepoDep = Annotated[LeaderboardRepository, Depends(get_leaderboard_repo)]
 
+
 def get_match_store() -> RedisMatchStore:
     return RedisMatchStore()
 

@@ -66,12 +66,8 @@ def create_app() -> FastAPI:
         return _error(exc.status_code, str(exc.detail))
 
     @app.exception_handler(RequestValidationError)
-    async def _validation_exc(
-        _: Request, exc: RequestValidationError
-    ) -> JSONResponse:
-        return _error(
-            422, "validation error", {"errors": jsonable_encoder(exc.errors())}
-        )
+    async def _validation_exc(_: Request, exc: RequestValidationError) -> JSONResponse:
+        return _error(422, "validation error", {"errors": jsonable_encoder(exc.errors())})
 
     for module in (auth, matches, users, store, leaderboard):
         app.include_router(module.router)
@@ -94,4 +90,3 @@ _registry = MatchRegistry(store=RedisMatchStore())
 _sio = build_gateway(_registry, get_settings())
 
 app = socketio.ASGIApp(_sio, other_asgi_app=fastapi_app)
-

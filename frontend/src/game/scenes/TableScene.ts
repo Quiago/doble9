@@ -33,11 +33,25 @@ export class TableScene extends Phaser.Scene {
   private dock!: Phaser.GameObjects.Container;
   private handLayer!: Phaser.GameObjects.Container;
   private opponents!: Phaser.GameObjects.Container;
-  private dropZones: Record<BoardSide, Phaser.Geom.Rectangle> = {
+  private dropZones: {
+    left: Phaser.Geom.Rectangle;
+    right: Phaser.Geom.Rectangle;
+    center: Phaser.Geom.Rectangle;
+  } = {
     left: new Phaser.Geom.Rectangle(),
     right: new Phaser.Geom.Rectangle(),
+    center: new Phaser.Geom.Rectangle(),
   };
-  private dragOver: BoardSide | null = null;
+  private dropHitboxes: {
+    left: Phaser.Geom.Rectangle;
+    right: Phaser.Geom.Rectangle;
+    center: Phaser.Geom.Rectangle;
+  } = {
+    left: new Phaser.Geom.Rectangle(),
+    right: new Phaser.Geom.Rectangle(),
+    center: new Phaser.Geom.Rectangle(),
+  };
+  private dragOver: BoardSide | "center" | null = null;
   private hand: TileSprite[] = [];
   private mySeat: Seat = 0;
   private myTurn = false;
@@ -118,17 +132,51 @@ export class TableScene extends Phaser.Scene {
       { tl: 0, tr: 0, bl: 24, br: 24 },
     );
 
-    // Drop zones (52×80, 12px inset) — dashed ⬅ ➡.
-    const dzY = t.centerY - 40;
-    this.dropZones.left = new Phaser.Geom.Rectangle(t.x + 12, dzY, 52, 80);
-    this.dropZones.right = new Phaser.Geom.Rectangle(
-      t.right - 12 - 52,
-      dzY,
-      52,
-      80,
-    );
-    this.drawDropZone(this.dropZones.left, "⬅", "left");
-    this.drawDropZone(this.dropZones.right, "➡", "right");
+    const isBoardEmpty = !useGameStore.getState().game?.board?.tiles || useGameStore.getState().game.board.tiles.length === 0;
+
+    if (isBoardEmpty) {
+      // Draw center drop zone
+      const dzW = 120;
+      const dzH = 60;
+      const dzX = t.centerX - dzW / 2;
+      const dzY = t.centerY - dzH / 2;
+      this.dropZones.center.setTo(dzX, dzY, dzW, dzH);
+      // No visual dashed box for center either
+
+      if (this.dzLabels.left) this.dzLabels.left.setVisible(false);
+      if (this.dzLabels.right) this.dzLabels.right.setVisible(false);
+
+      // Hitbox is the whole table
+      this.dropHitboxes.center.setTo(t.x, t.y, t.width, t.height);
+    } else {
+      const dzW = 60;
+      const dzH = 90;
+      const leftPos = this.board.getLeftEndWorldPos();
+      const rightPos = this.board.getRightEndWorldPos();
+
+      if (leftPos && rightPos) {
+        // Position visual drop zones just outside the chain ends
+        const leftX = leftPos.x - dzW - 8;
+        const leftY = leftPos.y - dzH / 2;
+        this.dropZones.left.setTo(leftX, leftY, dzW, dzH);
+
+        const rightX = rightPos.x + 8;
+        const rightY = rightPos.y - dzH / 2;
+        this.dropZones.right.setTo(rightX, rightY, dzW, dzH);
+
+        // UI Fix: Do not draw static dashed drop zones because they overlap tiles
+        // and break responsive design. The hitboxes will handle drag-and-drop.
+        if (this.dzLabels.center) this.dzLabels.center.setVisible(false);
+        if (this.dzLabels.left) this.dzLabels.left.setVisible(false);
+        if (this.dzLabels.right) this.dzLabels.right.setVisible(false);
+
+        // Hitboxes (detection areas around the chain ends)
+        // Generous detection: left covers from table left to leftmost tile + 30px
+        // right covers from rightmost tile - 30px to table right
+        this.dropHitboxes.left.setTo(t.x, t.y, leftPos.x - t.x + 30, t.height);
+        this.dropHitboxes.right.setTo(rightPos.x - 30, t.y, t.right - rightPos.x + 30, t.height);
+      }
+    }
 
     this.board.setCenter(t.centerX, t.centerY);
     this.layoutDock();
@@ -149,19 +197,33 @@ export class TableScene extends Phaser.Scene {
     return this.woodImg;
   }
 
-  private dzLabels: Phaser.GameObjects.Text[] = [];
-  private drawDropZone(r: Phaser.Geom.Rectangle, glyph: string, side: BoardSide) {
+  private dzLabels: {
+    left?: Phaser.GameObjects.Text;
+    right?: Phaser.GameObjects.Text;
+    center?: Phaser.GameObjects.Text;
+  } = {};
+  private drawDropZone(r: Phaser.Geom.Rectangle, glyph: string, side: BoardSide | "center") {
     const active = this.dragOver === side;
     const g = this.gfx;
     if (active) g.fillStyle(hex("--dorado"), 0.15).fillRoundedRect(r.x, r.y, r.width, r.height, 8);
     g.lineStyle(2, hex("--dorado"), active ? 1 : 0.2);
     // dashed border
     this.strokeDashedRoundRect(g, r, 8, 6, 4);
-    const lbl =
-      this.dzLabels[side === "left" ? 0 : 1] ??
-      this.add.text(0, 0, glyph, { fontSize: "18px" }).setOrigin(0.5);
+
+    let lbl = this.dzLabels[side];
+    if (!lbl) {
+      lbl = this.add.text(0, 0, glyph, {
+        fontSize: side === "center" ? "14px" : "18px",
+        fontFamily: "Montserrat, sans-serif",
+        fontStyle: "600",
+        color: "#ffffff"
+      }).setOrigin(0.5);
+      this.dzLabels[side] = lbl;
+    } else {
+      lbl.setText(glyph);
+      lbl.setVisible(true);
+    }
     lbl.setPosition(r.centerX, r.centerY).setAlpha(active ? 1 : 0.3);
-    this.dzLabels[side === "left" ? 0 : 1] = lbl;
   }
 
   private strokeDashedRoundRect(
@@ -283,6 +345,7 @@ export class TableScene extends Phaser.Scene {
     } else {
       this.layoutOpponents();
     }
+    this.layout();
   }
 
   private onTurnChanged(p: TurnChangedPayload) {
@@ -312,14 +375,14 @@ export class TableScene extends Phaser.Scene {
       dlog("phaser", `dragstart ${tile.tileId} (myTurn=${this.myTurn})`);
       if (!this.myTurn) return;
       tile.setData("dragging", true);
-      tile.setSelectedState(true);
+      tile.setSelectedState(true, true);
       this.children.bringToTop(tile);
     });
 
-    tile.on("drag", (_p: Phaser.Input.Pointer, dx: number, dy: number) => {
+    tile.on("drag", (pointer: Phaser.Input.Pointer, dx: number, dy: number) => {
       if (!this.myTurn) return;
       tile.setPosition(dx, dy);
-      const over = this.hitDropZone(dx, dy);
+      const over = this.hitDropZone(pointer.x, pointer.y);
       if (over !== this.dragOver) {
         this.dragOver = over;
         this.layout();
@@ -339,10 +402,11 @@ export class TableScene extends Phaser.Scene {
         }`,
       );
       if (this.myTurn && side) {
+        const targetSide = side === "center" ? "right" : side;
         // Optimistic: emit intent; server `tile_placed` is authoritative.
         dispatcher.dispatch({
           type: A.TILE_PLAYED,
-          payload: { tileId: tile.tileId, side },
+          payload: { tileId: tile.tileId, side: targetSide },
         });
       }
       // Snap home (server removes it on confirm).
@@ -356,9 +420,14 @@ export class TableScene extends Phaser.Scene {
     });
   }
 
-  private hitDropZone(x: number, y: number): BoardSide | null {
-    if (Phaser.Geom.Rectangle.Contains(this.dropZones.left, x, y)) return "left";
-    if (Phaser.Geom.Rectangle.Contains(this.dropZones.right, x, y)) return "right";
+  private hitDropZone(x: number, y: number): BoardSide | "center" | null {
+    const isBoardEmpty = !useGameStore.getState().game?.board?.tiles || useGameStore.getState().game.board.tiles.length === 0;
+    if (isBoardEmpty) {
+      if (Phaser.Geom.Rectangle.Contains(this.dropHitboxes.center, x, y)) return "center";
+      return null;
+    }
+    if (Phaser.Geom.Rectangle.Contains(this.dropHitboxes.left, x, y)) return "left";
+    if (Phaser.Geom.Rectangle.Contains(this.dropHitboxes.right, x, y)) return "right";
     return null;
   }
 }

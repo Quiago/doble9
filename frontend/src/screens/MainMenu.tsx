@@ -1,8 +1,12 @@
 // screens/MainMenu.tsx — (3) Main Menu. From design-reference/main-menu.jsx.
 // AGENT: Frontend.
+import { useEffect } from "react";
 import { Logo, GoldBtn, Panel, OnlineDot, ChromaImg } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav, type NavKey } from "@/lib/nav";
+import { useUserStore } from "@/store/userStore";
+import { api } from "@/services/api";
+
 
 const QUICK: Array<{ id: NavKey; label: string; sub: string; icon: string }> = [
   { id: "setup", label: "1 JUGADOR", sub: "vs CPU inteligente", icon: "🤖" },
@@ -20,6 +24,24 @@ const NAV: Array<{ id: NavKey; label: string; icon: string }> = [
 
 export default function MainMenu() {
   const go = useGameNav();
+  const user = useUserStore((s) => s.user);
+  const stats = useUserStore((s) => s.stats);
+
+  useEffect(() => {
+    if (user?.id) {
+      api.userStats(user.id)
+        .then((res) => {
+          useUserStore.getState().setStats(res);
+        })
+        .catch((e) => console.error("failed to fetch stats", e));
+    }
+  }, [user?.id]);
+
+  const username = user?.username ?? "Jugador";
+  const level = stats?.level ?? 1;
+  const league = stats?.leagueTier ?? "Bronze";
+  const coins = stats?.coins ?? 100;
+  const initial = username.charAt(0).toUpperCase();
 
   return (
     <div className="s-menu s-wood">
@@ -30,18 +52,19 @@ export default function MainMenu() {
         <div className="s-menu__top-right">
           <OnlineDot label="2,418 en línea" />
           <div className="s-menu__user">
-            <div className="s-menu__user-av">Y</div>
+            <div className="s-menu__user-av">{initial}</div>
             <div>
-              <div className="s-menu__user-name">Jugador</div>
-              <div className="s-menu__user-lvl">★ Nivel 12 · Gold I</div>
+              <div className="s-menu__user-name">{username}</div>
+              <div className="s-menu__user-lvl">★ Nivel {level} · {league}</div>
             </div>
           </div>
           <div className="s-menu__coins">
             <span>🪙</span>
-            <span>2,450</span>
+            <span>{coins}</span>
           </div>
         </div>
       </div>
+
 
       <div className="s-menu__main">
         <div className="s-menu__left">

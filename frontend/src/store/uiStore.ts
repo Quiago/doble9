@@ -32,7 +32,7 @@ interface UiSlice {
   clearSpecialFx: () => void;
 }
 
-export const useUiStore = create<UiSlice>((set) => ({
+export const useUiStore = create<UiSlice>((set, get) => ({
   conn: "connecting",
   audioEnabled: true,
   toasts: [],
@@ -42,13 +42,11 @@ export const useUiStore = create<UiSlice>((set) => ({
 
   toggleAudio: () => set((s) => ({ audioEnabled: !s.audioEnabled })),
 
-  toast: (message, variant = "info") =>
-    set((s) => ({
-      toasts: [
-        ...s.toasts,
-        { id: crypto.randomUUID(), message, variant },
-      ],
-    })),
+  toast: (message, variant = "info") => {
+    const id = crypto.randomUUID();
+    set((s) => ({ toasts: [...s.toasts, { id, message, variant }] }));
+    setTimeout(() => get().dismissToast(id), 3000);
+  },
 
   dismissToast: (id) =>
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),

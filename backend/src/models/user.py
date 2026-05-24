@@ -28,9 +28,7 @@ class User(Base):
     )
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     country: Mapped[str | None] = mapped_column(String(2))
-    settings: Mapped[dict[str, object]] = mapped_column(
-        JSONB, server_default=text("'{}'::jsonb")
-    )
+    settings: Mapped[dict[str, object]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
 
 
 class PlayerStats(Base):
@@ -56,9 +54,7 @@ class PlayerStats(Base):
 
 class Achievement(Base):
     __tablename__ = "achievements"
-    __table_args__ = (
-        UniqueConstraint("user_id", "achievement_key", name="uq_user_achievement"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "achievement_key", name="uq_user_achievement"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")

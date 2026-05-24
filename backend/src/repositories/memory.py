@@ -33,16 +33,37 @@ def _uuid() -> str:
 # Static catalogue (no DB table for the catalogue itself — only ownership
 # lives in `inventory`). Mirrors StoreItem in the contract.
 STORE_CATALOG: tuple[StoreItemRow, ...] = (
-    StoreItemRow("skin_manolito_heat", "avatar_skin", "Manolito Heat",
-                 "Manolito con jersey de los Heat.", 250, None, False),
-    StoreItemRow("skin_manolito_esmoquin", "avatar_skin", "Manolito Esmoquin",
-                 "Manolito de etiqueta.", 400, None, False),
-    StoreItemRow("theme_calle_cuba", "board_theme", "Calle Cuba",
-                 "Mesa de dominó en una calle de La Habana.", 300, None, False),
-    StoreItemRow("tiles_oro", "tile_set", "Fichas de Oro",
-                 "Set de fichas doradas premium.", 500, None, False),
-    StoreItemRow("emote_pollona", "emote", "¡POLLONA!",
-                 "Emote de celebración.", 100, None, False),
+    StoreItemRow(
+        "skin_manolito_heat",
+        "avatar_skin",
+        "Manolito Heat",
+        "Manolito con jersey de los Heat.",
+        250,
+        None,
+        False,
+    ),
+    StoreItemRow(
+        "skin_manolito_esmoquin",
+        "avatar_skin",
+        "Manolito Esmoquin",
+        "Manolito de etiqueta.",
+        400,
+        None,
+        False,
+    ),
+    StoreItemRow(
+        "theme_calle_cuba",
+        "board_theme",
+        "Calle Cuba",
+        "Mesa de dominó en una calle de La Habana.",
+        300,
+        None,
+        False,
+    ),
+    StoreItemRow(
+        "tiles_oro", "tile_set", "Fichas de Oro", "Set de fichas doradas premium.", 500, None, False
+    ),
+    StoreItemRow("emote_pollona", "emote", "¡POLLONA!", "Emote de celebración.", 100, None, False),
 )
 
 
@@ -55,10 +76,16 @@ class MemoryUserRepository:
             if u.username == username or u.email == email:
                 raise ConflictError("username or email already in use")
         row = UserRow(
-            id=_uuid(), username=username, email=email,
-            password_hash=password_hash, avatar_url=None, country=None,
+            id=_uuid(),
+            username=username,
+            email=email,
+            password_hash=password_hash,
+            avatar_url=None,
+            country=None,
             created_at=_now_iso(),
+            settings={},
         )
+
         self._by_id[row.id] = row
         return row
 
@@ -70,6 +97,41 @@ class MemoryUserRepository:
             if identifier in (u.username, u.email):
                 return u
         return None
+
+    async def update(
+        self,
+        user_id: str,
+        *,
+        username: str | None = None,
+        email: str | None = None,
+        avatar_url: str | None = None,
+        country: str | None = None,
+        settings: dict[str, object] | None = None,
+    ) -> UserRow:
+        u = self._by_id.get(user_id)
+        if u is None:
+            raise NotFoundError("user not found")
+        for existing in self._by_id.values():
+            if existing.id != user_id and (
+                (username is not None and existing.username == username)
+                or (email is not None and existing.email == email)
+            ):
+                raise ConflictError("username or email already in use")
+
+        # UserRow is a frozen-like or slots dataclass. We can replace it or mutate fields.
+        # It's an immutable-like dataclass from dataclasses. Let's create a new one.
+        updated = UserRow(
+            id=u.id,
+            username=username if username is not None else u.username,
+            email=email if email is not None else u.email,
+            password_hash=u.password_hash,
+            avatar_url=avatar_url if avatar_url is not None else u.avatar_url,
+            country=country if country is not None else u.country,
+            created_at=u.created_at,
+            settings=settings if settings is not None else u.settings,
+        )
+        self._by_id[user_id] = updated
+        return updated
 
 
 class MemoryStatsRepository:
@@ -90,6 +152,33 @@ class MemoryStatsRepository:
         row.coins = new_total
         return new_total
 
+    async def update_after_match(
+        self,
+        user_id: str,
+        *,
+        won: bool,
+        points: int,
+        xp_gain: int,
+        coins_gain: int,
+        league_points_gain: int,
+    ) -> StatsRow:
+        row = await self.ensure(user_id)
+        row.games_played += 1
+        row.total_points += points
+        if won:
+            row.games_won += 1
+            row.current_streak += 1
+            if row.current_streak > row.best_streak:
+                row.best_streak = row.current_streak
+        else:
+            row.games_lost += 1
+            row.current_streak = 0
+        row.xp += xp_gain
+        row.coins += coins_gain
+        row.league_points = max(0, row.league_points + league_points_gain)
+        row.level = 1 + (row.xp // 1000)
+        return row
+
 
 class MemoryMatchRepository:
     def __init__(self) -> None:
@@ -97,12 +186,21 @@ class MemoryMatchRepository:
         self._members: dict[str, set[str]] = {}
 
     async def create(
-        self, *, mode: str, target_score: int, room_code: str,
-        host_user_id: str, fill_with_bots: bool,
+        self,
+        *,
+        mode: str,
+        target_score: int,
+        room_code: str,
+        host_user_id: str,
+        fill_with_bots: bool,
     ) -> MatchRow:
         row = MatchRow(
-            id=_uuid(), room_code=room_code, mode=mode, status="LOBBY",
-            target_score=target_score, created_at=_now_iso(),
+            id=_uuid(),
+            room_code=room_code,
+            mode=mode,
+            status="LOBBY",
+            target_score=target_score,
+            created_at=_now_iso(),
         )
         self._by_id[row.id] = row
         self._members[row.id] = {host_user_id}
@@ -127,6 +225,29 @@ class MemoryMatchRepository:
     ) -> tuple[list[HistoryRow], int]:
         return [], 0
 
+    async def finish_match(
+        self,
+        match_id: str,
+        *,
+        winner_team: str,
+        final_scores: dict[str, int],
+        status: str = "FINISHED",
+    ) -> None:
+        if match_id not in self._by_id:
+            raise NotFoundError("match not found")
+        m = self._by_id[match_id]
+        # Memory matches don't have fields in MatchRow, but let's update them anyway in our dict
+        # we can recreate the MatchRow with updated status
+        updated = MatchRow(
+            id=m.id,
+            room_code=m.room_code,
+            mode=m.mode,
+            status=status,
+            target_score=m.target_score,
+            created_at=m.created_at,
+        )
+        self._by_id[match_id] = updated
+
 
 class MemoryStoreRepository:
     def __init__(self, stats: MemoryStatsRepository) -> None:
@@ -137,8 +258,13 @@ class MemoryStoreRepository:
         owned = self._owned.get(user_id or "", set())
         return [
             StoreItemRow(
-                i.key, i.type, i.name, i.description, i.price_coins,
-                i.preview_url, i.key in owned,
+                i.key,
+                i.type,
+                i.name,
+                i.description,
+                i.price_coins,
+                i.preview_url,
+                i.key in owned,
             )
             for i in STORE_CATALOG
         ]
@@ -162,7 +288,8 @@ class MemoryLeaderboardRepository:
 
     async def top(self, *, tier: str | None, limit: int) -> list[LeaderboardRow]:
         rows = [
-            (uid, s) for uid, s in self._stats._rows.items()
+            (uid, s)
+            for uid, s in self._stats._rows.items()
             if tier is None or s.league_tier == tier
         ]
         rows.sort(key=lambda kv: kv[1].league_points, reverse=True)
@@ -171,10 +298,12 @@ class MemoryLeaderboardRepository:
             u = await self._users.get_by_id(uid)
             out.append(
                 LeaderboardRow(
-                    rank=rank, user_id=uid,
+                    rank=rank,
+                    user_id=uid,
                     username=u.username if u else uid,
                     avatar_url=u.avatar_url if u else None,
-                    league_tier=s.league_tier, league_points=s.league_points,
+                    league_tier=s.league_tier,
+                    league_points=s.league_points,
                 )
             )
         return out

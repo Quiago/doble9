@@ -46,6 +46,15 @@ class User(_Camel):
     avatar_url: str | None = None
     country: str | None = None
     created_at: str
+    settings: dict[str, object] = Field(default_factory=dict)
+
+
+class UpdateUserRequest(_Camel):
+    username: str | None = Field(default=None, min_length=3, max_length=32)
+    email: EmailStr | None = None
+    avatar_url: str | None = None
+    country: str | None = None
+    settings: dict[str, object] | None = None
 
 
 class AuthResponse(_Camel):

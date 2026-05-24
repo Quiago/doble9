@@ -72,9 +72,7 @@ def test_register_login_me_flow(client: TestClient) -> None:
     assert me.json()["username"] == "manolito"
     assert me.json()["email"] == "manolito@d9.cu"
 
-    login = client.post(
-        "/auth/login", json={"identifier": "manolito", "password": "domino123"}
-    )
+    login = client.post("/auth/login", json={"identifier": "manolito", "password": "domino123"})
     assert login.status_code == 200 and login.json()["user"]["id"] == uid
 
 
@@ -87,9 +85,7 @@ def test_register_conflict_and_bad_login(client: TestClient) -> None:
     assert dup.status_code == 409
     assert dup.json()["code"] == "conflict"
 
-    bad = client.post(
-        "/auth/login", json={"identifier": "manolito", "password": "wrong"}
-    )
+    bad = client.post("/auth/login", json={"identifier": "manolito", "password": "wrong"})
     assert bad.status_code == 401 and bad.json()["code"] == "unauthorized"
 
 
@@ -119,9 +115,7 @@ def test_match_create_join_get(client: TestClient) -> None:
     assert m["status"] == "LOBBY" and m["targetScore"] == 100
 
     mid = m["id"]
-    wrong = client.post(
-        f"/matches/{mid}/join", headers=_auth(token), json={"roomCode": "ZZZZZZ"}
-    )
+    wrong = client.post(f"/matches/{mid}/join", headers=_auth(token), json={"roomCode": "ZZZZZZ"})
     assert wrong.status_code == 403
 
     ok = client.post(
@@ -156,24 +150,16 @@ def test_store_list_purchase_and_economy(client: TestClient) -> None:
     assert items.status_code == 200
     assert all(i["owned"] is False for i in items.json())
 
-    buy = client.post(
-        "/store/purchase", headers=_auth(token), json={"itemKey": "emote_pollona"}
-    )
+    buy = client.post("/store/purchase", headers=_auth(token), json={"itemKey": "emote_pollona"})
     assert buy.status_code == 200 and buy.json()["coinsRemaining"] == 0  # 100-100
 
-    again = client.post(
-        "/store/purchase", headers=_auth(token), json={"itemKey": "emote_pollona"}
-    )
+    again = client.post("/store/purchase", headers=_auth(token), json={"itemKey": "emote_pollona"})
     assert again.status_code == 200 and again.json()["coinsRemaining"] == 0
 
-    broke = client.post(
-        "/store/purchase", headers=_auth(token), json={"itemKey": "tiles_oro"}
-    )
+    broke = client.post("/store/purchase", headers=_auth(token), json={"itemKey": "tiles_oro"})
     assert broke.status_code == 402 and broke.json()["code"] == "payment_required"
 
-    nope = client.post(
-        "/store/purchase", headers=_auth(token), json={"itemKey": "ghost"}
-    )
+    nope = client.post("/store/purchase", headers=_auth(token), json={"itemKey": "ghost"})
     assert nope.status_code == 404
 
     items2 = client.get("/store/items", headers=_auth(token))

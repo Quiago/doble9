@@ -86,6 +86,8 @@ export interface GameState {
   boneyardCount: number;
   /** Epoch ms of last authoritative mutation (reconnect replay anchor). */
   lastActionAt: number;
+  /** True when the recipient must pass (no legal moves). */
+  canPass?: boolean;
 }
 
 export type SpecialPlayType = "DOUBLE_9" | "CAPICUA" | "POLLONA";

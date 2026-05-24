@@ -40,7 +40,7 @@ export class TileSprite extends Phaser.GameObjects.Image {
     return Math.abs(this.angle) === 90 ? { w: h, h: w } : { w, h };
   }
 
-  setSelectedState(on: boolean) {
+  setSelectedState(on: boolean, isDragging = false) {
     if (this.selected === on) return;
     this.selected = on;
     this.preFX?.clear();
@@ -50,7 +50,7 @@ export class TileSprite extends Phaser.GameObjects.Image {
       this.scene.tweens.add({
         targets: this,
         scale: this.baseScale * 1.04,
-        y: this.y - 7,
+        ...(isDragging ? {} : { y: this.y - 7 }),
         duration: 150,
         ease: "Back.out",
       });
