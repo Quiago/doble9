@@ -25,7 +25,7 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     setLoading(true);
     try {
       if (isLogin) {
-        await login({ email, password });
+        await login({ identifier: email, password });
         toast("Has iniciado sesión", "success");
       } else {
         await register({ username, email, password });
@@ -34,7 +34,7 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       onSuccess();
     } catch (err: any) {
       dlog("error", "auth failed", err);
-      toast(err?.response?.data?.detail || "Error de autenticación", "error");
+      toast(err.message || "Error de autenticación", "error");
     } finally {
       setLoading(false);
     }
