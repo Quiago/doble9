@@ -39,7 +39,9 @@ class SocketTransport implements Transport {
     this.socket = io(import.meta.env.VITE_WS_URL, {
       path: "/socket.io",
       transports: ["websocket"],
-      auth: { token: useUserStore.getState().token, clientId: CLIENT_ID },
+      auth: (cb) => {
+        cb({ token: useUserStore.getState().token, clientId: CLIENT_ID });
+      },
       reconnection: true,
       reconnectionDelay: 500,
       reconnectionDelayMax: 4000,
@@ -97,8 +99,17 @@ class SocketTransport implements Transport {
     else this.buffer.push(msg);
   }
 
-  isConnected() {
+  isConnected(): boolean {
     return this.socket?.connected ?? false;
+  }
+
+  reconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket.connect();
+    } else {
+      this.connect();
+    }
   }
 
   disconnect() {

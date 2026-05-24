@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import { useUserStore } from "@/store/userStore";
 import { api } from "@/services/api";
+import { socketTransport } from "@/services/websocket";
 import type { LoginRequest, RegisterRequest } from "@shared/api";
 
 export function useAuth() {
@@ -14,6 +15,7 @@ export function useAuth() {
     async (data: LoginRequest) => {
       const res = await api.login(data);
       setAuth(res.token, res.user);
+      socketTransport.reconnect();
       try {
         const stats = await api.userStats(res.user.id);
         useUserStore.getState().setStats(stats);
@@ -29,6 +31,7 @@ export function useAuth() {
     async (data: RegisterRequest) => {
       const res = await api.register(data);
       setAuth(res.token, res.user);
+      socketTransport.reconnect();
       try {
         const stats = await api.userStats(res.user.id);
         useUserStore.getState().setStats(stats);
