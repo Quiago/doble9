@@ -45,15 +45,14 @@ export default function GameTable() {
   const chat = useGameStore((s) => s.chat);
   const meId = useUserStore((s) => s.user?.id) ?? "u-yo";
   const [tipIdx, setTipIdx] = useState(0);
+  const [roundEnd, setRoundEnd] = useState<any>(null);
+  const [matchEnd, setMatchEnd] = useState<any>(null);
   const mountRef = useRef<HTMLDivElement>(null);
 
   // Derived: should show "No Llevo" button?
   const myTurn = game?.turn?.userId === meId;
   const canPass = (() => {
     if (!myTurn || !game || game.status !== "PLAYING") return false;
-    // Server-provided flag (from snapshot)
-    if (game.canPass === true) return true;
-    // Client-computed fallback: if it's my turn and I have tiles but none match
     const hand = game.hand ?? [];
     if (hand.length === 0) return false;
     const { leftEnd, rightEnd } = game.board;
@@ -71,18 +70,29 @@ export default function GameTable() {
     dispatcher.dispatch({ type: A.JOIN_LOBBY, payload: { matchId } });
   }, [matchId]);
 
+  // Listen for end events
+  useEffect(() => {
+    const unsubs = [
+      dispatcher.on("turn_changed", () => setTipIdx((n) => n + 1)),
+      dispatcher.on("round_end", (p) => {
+        setRoundEnd(p);
+        useGameStore.getState().applyScores((p as any).scores);
+        setTimeout(() => setRoundEnd(null), 5000); // Auto-hide after 5s
+      }),
+      dispatcher.on("match_end", (p) => {
+        setMatchEnd(p);
+        useGameStore.getState().applyScores((p as any).scores);
+      }),
+    ];
+    return () => unsubs.forEach((u) => u());
+  }, []);
+
   // Mount the Phaser engine (boundary = Dispatcher only, ADR-002).
   useEffect(() => {
     if (!mountRef.current) return;
     const gm = new GameManager(mountRef.current);
     return () => gm.destroy();
   }, []);
-
-  // Advance Manolito's tip every turn change (decoupled via the bus).
-  useEffect(
-    () => dispatcher.on("turn_changed", () => setTipIdx((n) => n + 1)),
-    [],
-  );
 
   const handlePass = () => {
     dispatcher.dispatch({ type: A.PASS, payload: { matchId } });
@@ -145,6 +155,53 @@ export default function GameTable() {
               <span className="s-game__pass-hint">
                 No tienes fichas para jugar
               </span>
+            </button>
+          </div>
+        )}
+
+        {/* Round End Overlay */}
+        {roundEnd && (
+          <div className="s-game__end-overlay" style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 100, color: "#fff", animation: "fadeIn 0.3s ease" }}>
+            <h2 style={{ fontSize: "3rem", color: "#e4b443", textTransform: "uppercase", marginBottom: "0.5rem", textShadow: "0 2px 10px rgba(228,180,67,0.5)" }}>
+              {roundEnd.winnerTeam === null ? "Ronda Trancada" : `¡Gana el Equipo ${roundEnd.winnerTeam}!`}
+            </h2>
+            <p style={{ fontSize: "1.5rem", marginBottom: "2rem", opacity: 0.9 }}>
+              {roundEnd.kind === "TRANQUE" ? "Tranque resuelto por conteo." : "¡Se pegaron!"}
+            </p>
+            <div style={{ fontSize: "4rem", fontWeight: 900, color: "#1bd96a", background: "rgba(27,217,106,0.1)", padding: "1rem 3rem", borderRadius: "20px", border: "2px solid rgba(27,217,106,0.3)" }}>
+              +{roundEnd.points} PTS
+            </div>
+            <p style={{ marginTop: "2rem", color: "#aaa", fontSize: "0.9rem" }}>Próxima ronda comenzando en breve...</p>
+          </div>
+        )}
+
+        {/* Match End Overlay */}
+        {matchEnd && (
+          <div className="s-game__end-overlay" style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200, color: "#fff", animation: "fadeIn 0.5s ease" }}>
+            <div style={{ fontSize: "5rem", marginBottom: "1rem" }}>🏆</div>
+            <h1 style={{ fontSize: "4rem", color: "#e4b443", textTransform: "uppercase", marginBottom: "1rem", textShadow: "0 0 20px rgba(228,180,67,0.6)" }}>
+              ¡Fin de la Partida!
+            </h1>
+            <h2 style={{ fontSize: "2rem", marginBottom: "3rem" }}>
+              Ganador: Equipo {matchEnd.winnerTeam}
+            </h2>
+            <div style={{ display: "flex", gap: "2rem", marginBottom: "4rem" }}>
+              <div style={{ textAlign: "center", padding: "1.5rem", background: "rgba(255,255,255,0.05)", borderRadius: "16px", minWidth: "150px" }}>
+                <div style={{ color: "#aaa", marginBottom: "0.5rem" }}>Equipo 0</div>
+                <div style={{ fontSize: "2.5rem", fontWeight: 900 }}>{matchEnd.scores[0]}</div>
+              </div>
+              <div style={{ textAlign: "center", padding: "1.5rem", background: "rgba(255,255,255,0.05)", borderRadius: "16px", minWidth: "150px" }}>
+                <div style={{ color: "#aaa", marginBottom: "0.5rem" }}>Equipo 1</div>
+                <div style={{ fontSize: "2.5rem", fontWeight: 900 }}>{matchEnd.scores[1]}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => go("menu")}
+              style={{ padding: "1rem 3rem", fontSize: "1.2rem", fontWeight: 700, background: "#e4b443", color: "#000", border: "none", borderRadius: "8px", cursor: "pointer", transition: "transform 0.2s" }}
+              onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              VOLVER AL MENÚ
             </button>
           </div>
         )}
