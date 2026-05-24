@@ -50,9 +50,10 @@ export default function Setup() {
       });
       dlog("ui", `created solo match id=${match.id}`);
       navigate(`/play/match/${match.id}`);
-    } catch (err) {
+    } catch (err: any) {
       dlog("error", "failed to create match", err);
-      go("game");
+      const msg = err?.response?.data?.detail || "Error al crear la partida";
+      import("@/store/uiStore").then(m => m.useUiStore.getState().toast(msg, "error"));
     } finally {
       setLoading(false);
     }

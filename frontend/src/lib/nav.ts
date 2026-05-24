@@ -26,8 +26,8 @@ const PATHS: Record<NavKey, string> = {
   menu: "/menu",
   setup: "/play/solo",
   lobby: "/play/lobby/NEW",
-  game: "/play/match/mock-match",
-  results: "/play/match/mock-match/results",
+  game: "/play/solo", // redirect to setup if generic 'game' is called without id
+  results: "/menu",
   tutorial: "/tutorial/1",
   profile: "/profile/me",
   settings: "/settings",

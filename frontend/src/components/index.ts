@@ -11,6 +11,7 @@ export { NavHeader } from "./layout/NavHeader";
 export { RotateHint } from "./layout/RotateHint";
 export { PlayerAvatar } from "./organisms/PlayerAvatar";
 export { ScorePanel } from "./organisms/ScorePanel";
+export { AuthModal } from "./organisms/AuthModal";
 export { ChatPanel, type ChatMsg } from "./organisms/ChatPanel";
 export { TipsPanel } from "./organisms/TipsPanel";
 export { MesaInfoPanel } from "./organisms/MesaInfoPanel";

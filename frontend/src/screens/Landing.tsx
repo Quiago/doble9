@@ -1,8 +1,10 @@
 // screens/Landing.tsx — (2) Landing. From design-reference/splash-landing.jsx.
 // AGENT: Frontend.
-import { Logo, GoldBtn, GhostBtn, OnlineDot, ChromaImg } from "@/components";
+import { useState } from "react";
+import { Logo, GoldBtn, GhostBtn, OnlineDot, ChromaImg, AuthModal } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav, type NavKey } from "@/lib/nav";
+import { useAuth } from "@/hooks";
 
 const FEATURES = [
   "Doble 9 Completo",
@@ -28,6 +30,16 @@ const BAR_LINKS: Array<{ label: string; key: NavKey }> = [
 
 export default function Landing() {
   const go = useGameNav();
+  const { isAuthed } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
+
+  const handlePlay = () => {
+    if (!isAuthed) {
+      setShowAuth(true);
+    } else {
+      go("menu");
+    }
+  };
 
   return (
     <div className="s-landing s-wood">
@@ -52,7 +64,7 @@ export default function Landing() {
           </div>
 
           <div className="s-landing__cta">
-            <GoldBtn size="lg" onClick={() => go("menu")}>
+            <GoldBtn size="lg" onClick={handlePlay}>
               JUGAR AHORA
             </GoldBtn>
             <GhostBtn size="lg" onClick={() => go("tutorial")}>
@@ -116,6 +128,16 @@ export default function Landing() {
           ))}
         </div>
       </div>
+
+      {showAuth && (
+        <AuthModal 
+          onClose={() => setShowAuth(false)} 
+          onSuccess={() => {
+            setShowAuth(false);
+            go("menu");
+          }} 
+        />
+      )}
     </div>
   );
 }
