@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { GoldBtn, Panel } from "@/components";
+import { GoldBtn, Panel, ChromaImg } from "@/components";
+import { ASSETS } from "@/lib/constants";
 import { useAuth } from "@/hooks";
 import { useUiStore } from "@/store/uiStore";
 import { dlog } from "@/lib/debug";
@@ -41,7 +42,13 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
   return (
     <div className="c-modal-overlay s-auth">
-      <Panel gold className="c-modal s-auth__panel" style={{ width: 400 }}>
+      <Panel gold className="s-auth__panel">
+        <ChromaImg 
+          className="s-auth__img" 
+          src={ASSETS.manolitoHold} 
+          alt="Manolito" 
+        />
+        
         <h2 className="s-auth__title">{isLogin ? "Iniciar Sesión" : "Crear Perfil"}</h2>
         <p className="s-auth__sub">
           {isLogin 
