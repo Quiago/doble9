@@ -12,7 +12,17 @@ cambio".
 
 ### Frontend
 
-#### Fixed (ficha jugada se quedaba en mano, 2026-05-25)
+#### Fixed (doble instancia Phaser por StrictMode — crash de render, 2026-05-26)
+- **Causa raíz** del "la ficha jugada se queda en mano" (el server SÍ aceptaba la
+  jugada): `React.StrictMode` doble-monta el efecto en dev y `Phaser.Game.destroy()`
+  es asíncrono → no destruye el primer juego antes del remonte → **dos `Phaser.Game`
+  vivos**. Los listosners del bus de la escena zombi disparaban con `this.sys ===
+  null` → `TypeError: queueDepthSort/sys/sourceSize` en `BoardGroup.render`,
+  `rebuildHand`, `layout`, `PollonaEffect` → el render de mano/tablero crasheaba y
+  no se actualizaba. **Fix**: quitar `StrictMode` (incompatible con el ciclo de
+  vida async de Phaser; su template oficial de React tampoco lo usa) + `GameManager
+  .destroy()` idempotente que limpia `window.phaserGame`. Compone con el fix de
+  `removeFromHand` por id.
 - **Bug**: al jugar (p. ej. 9-4) la ficha aparecía en el tablero **y** seguía en
   la mano. La baja del sprite del dock estaba gateada por `p.bySeat === mySeat` en
   `TableScene.renderPaced`; `mySeat` cae a `0` si el usuario aún no estaba

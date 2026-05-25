@@ -1,4 +1,3 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "@/App";
@@ -40,12 +39,15 @@ async function bootstrap() {
   audio.start();
 
   dlog("boot", "React render");
+  // NO StrictMode: su doble-montaje en dev crea dos Phaser.Game (destroy() es
+  // asíncrono y no alcanza a destruir el primero antes del remonte), dejando una
+  // escena zombi cuyos listeners del bus golpean `this.sys === null` y crashean
+  // el render de mano/tablero. Phaser es incompatible con el doble-invoke de
+  // StrictMode (su template oficial de React tampoco lo usa). AGENT: Frontend.
   createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </StrictMode>,
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>,
   );
 }
 

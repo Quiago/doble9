@@ -30,7 +30,14 @@ export class GameManager {
     }
   }
 
+  private destroyed = false;
+
   destroy() {
+    if (this.destroyed) return; // idempotente: evita doble-destroy en remontes
+    this.destroyed = true;
+    if (typeof window !== "undefined" && (window as any).phaserGame === this.game) {
+      (window as any).phaserGame = undefined;
+    }
     this.game.destroy(true);
   }
 }
