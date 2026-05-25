@@ -12,7 +12,32 @@ cambio".
 
 ### Architect
 
-#### Added
+#### Added (integración FE↔BE, 2026-05-25)
+- **Suite de integración FE↔BE real sobre el cable**
+  (`backend/tests/integration/`): arranca un uvicorn vivo y conduce
+  REST→JWT→Socket.IO `/game` igual que el frontend. Escenarios: rechazo de
+  conexión sin token (ADR-007), snapshot `game_state` tras `join_lobby`,
+  partida solo completa hasta `match_end` (valida cadena del tablero orientada
+  = fix `is_flipped`, `round_end`/`match_end` con `kind`/`points`/`winnerTeam`,
+  `tilesCount` de rivales) y jugada ilegal → `error` (gatillo del rollback).
+  Marcador pytest `integration` (excluido de `make check`), target
+  `make test-e2e`, dep dev `aiohttp`. README en la carpeta.
+- `docs/adr/ADR-009-auth-route-guard.md`: diagnóstico de "missing bearer token"
+  (no es bug de backend — falta guard de ruta; el splash salta el gate de
+  Landing) + parche `<RequireAuth>` propuesto al agente Frontend.
+
+#### Findings (para los agentes)
+- **Backend**: `src/game/board.py` líneas 126 y 132 superan 100 cols (E501);
+  `make check` está **rojo en `main`** por esto (commit de `is_flipped` sin
+  pasar el gate). Fix: envolver ambas líneas o `make format`.
+- **Frontend**: `Setup.tsx` lee `err?.response?.data?.detail` (forma axios) pero
+  el cliente lanza `ApiException` con `.body.message`; el mensaje real del
+  backend nunca llega a la UI. Ver parche en ADR-009.
+- **Contrato OK**: `winnerTeam` es `"teamA"`/`"teamB"` (consistente FE/BE/shared);
+  el `us`/`them` de CLAUDE.md era ilustrativo. Nota UX: `GameTable.tsx` muestra
+  "Equipo teamA" — conviene mapear a un nombre legible.
+
+#### Added (scaffold original)
 - Estructura del monorepo y scaffold inicial (`frontend/`, `backend/`,
   `contracts/`, `shared/`, `docs/`, `.github/`).
 - `.gitignore` raíz + `frontend/.gitignore` + `backend/.gitignore`.

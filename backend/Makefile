@@ -4,7 +4,7 @@
 # workflow reproducible and identical in CI.
 
 .DEFAULT_GOAL := help
-.PHONY: help install lock sync dev run test test-watch cov lint format \
+.PHONY: help install lock sync dev run test test-watch test-e2e cov lint format \
         typecheck check migrate makemigration db-up db-down db-reset \
         infra-up infra-down clean
 
@@ -54,6 +54,12 @@ test: ## Run full test suite
 
 test-watch: ## Re-run tests on file change
 	uv run pytest-watch -- -q
+
+test-e2e: ## Run real over-the-wire FE↔BE integration tests (needs infra-up)
+	# Boots a live uvicorn + drives REST→JWT→Socket.IO /game exactly like the
+	# frontend. Requires Postgres+Redis (run `make infra-up` and `make migrate`
+	# first). Skips itself if infra is unreachable. See tests/integration/.
+	uv run pytest -q -m integration -o addopts=""
 
 cov: ## Run tests with coverage report
 	uv run pytest --cov=src --cov-report=term-missing --cov-report=xml

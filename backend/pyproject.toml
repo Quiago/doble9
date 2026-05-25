@@ -37,6 +37,7 @@ dev = [
     "pytest-watch>=4.2",
     "ruff>=0.8",
     "mypy>=1.13",
+    "aiohttp>=3.13.5",
 ]
 
 [tool.ruff]
@@ -49,6 +50,12 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Default run is hermetic unit tests. Integration tests (real Postgres +
+# Redis + a live uvicorn over the wire) are opt-in via `make test-e2e`.
+addopts = "-m 'not integration'"
+markers = [
+    "integration: real over-the-wire FE↔BE flow; needs Postgres+Redis+server (Architect)",
+]
 
 [tool.mypy]
 python_version = "3.12"
