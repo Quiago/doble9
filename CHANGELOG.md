@@ -12,6 +12,11 @@ cambio".
 
 ### Frontend
 
+#### Added (observabilidad de la mano, 2026-05-26)
+- Log `[d9:hand] sync N→M −[removidas] +[añadidas]` en `syncHand` para depurar en
+  vivo qué fichas entran/salen del dock y cuándo (junto al `↑ TILE_PLAYED` ya
+  existente cierra la cadena jugar→baja optimista→reconciliación).
+
 #### Fixed (desincronización de la mano — dock como proyección de game.hand, 2026-05-26)
 - **Bugs**: (1) la 1ª ficha jugada se quedaba en la mano (las siguientes sí salían);
   (2) en ronda nueva el humano arrancaba con menos de 10 fichas (6 observadas)

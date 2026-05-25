@@ -562,6 +562,7 @@ export class TableScene extends Phaser.Scene {
    *  imperative add/remove drift that left played tiles in hand and dealt a
    *  short hand on a new round. */
   private syncHand(ids: readonly string[]) {
+    const before = this.hand.map((s) => s.tileId);
     const current = new Map(this.hand.map((s) => [s.tileId, s]));
     const target = new Set(ids);
     let changed = false;
@@ -587,7 +588,15 @@ export class TableScene extends Phaser.Scene {
       return t;
     });
 
-    if (changed) this.positionHand();
+    if (changed) {
+      const removed = before.filter((id) => !target.has(id));
+      const added = ids.filter((id) => !before.includes(id));
+      dlog(
+        "hand",
+        `sync ${before.length}→${ids.length} −[${removed.join(",")}] +[${added.join(",")}]`,
+      );
+      this.positionHand();
+    }
   }
 
   // ── Drag-and-drop (CLAUDE.md §4.4) ──────────────────────────────────────
