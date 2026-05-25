@@ -192,9 +192,11 @@ components:
       payload: { $ref: "#/components/schemas/ServerEnvelope" }
     RoundEnd:
       name: round_end
+      # payload = RoundEndPayload: { points, winnerTeam, scores, kind } (ADR-010).
       payload: { $ref: "#/components/schemas/ServerEnvelope" }
     MatchEnd:
       name: match_end
+      # payload = MatchEndPayload: { winnerTeam, scores, kind, points } (ADR-010).
       payload: { $ref: "#/components/schemas/ServerEnvelope" }
     ErrorMsg:
       name: error

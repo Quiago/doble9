@@ -12,6 +12,25 @@ cambio".
 
 ### Architect
 
+#### Added (cierre de integración, 2026-05-25)
+- **ADR-010 + contrato**: `round_end`/`match_end` ahora declaran `kind`
+  (`"DOMINO"|"TRANQUE"`) y `match_end` también `points` en
+  `shared/types/game.d.ts` (+ nota en `contracts/websocket.yml`). El campo ya
+  viajaba por el cable y el FE lo consumía; esto solo ratifica/documenta el
+  contrato (ningún agente podía tocar `shared/` sin ADR). Verificado por la
+  suite e2e.
+- **ADR-009 addendum**: ratificado `/tutorial/:level` como ruta **pública**
+  (embudo "VER TUTORIAL" pre-registro); públicas = `/`, `/welcome`,
+  `/tutorial/:level`, el resto bajo `<RequireAuth>`.
+- **Linealización `fe/work → main`** (merge limpio): trae el guard de auth
+  ADR-009 (App/Landing/Setup), el fix de build de `TableScene.ts` y la UX de
+  errores. Build FE verde, `make check` verde (103 tests), `make test-e2e`
+  verde (4/4) en `main`.
+- **Preservado trabajo FE huérfano** (`fix(fe)`): el rollback anti-ghost-tile
+  (`gameStore`/`dispatcher`) y los errores inline del `AuthModal` vivían solo
+  como cambios sin commitear en el working tree de `main` (ausentes de
+  `fe/work`); commiteados para no perderlos. Frontend debe revisar.
+
 #### Added (integración FE↔BE, 2026-05-25)
 - **Suite de integración FE↔BE real sobre el cable**
   (`backend/tests/integration/`): arranca un uvicorn vivo y conduce

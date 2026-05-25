@@ -167,15 +167,25 @@ export interface ChatMessagePayload {
   message: string;
 }
 
+/** How a round was decided (ADR-010): `DOMINO` = a hand emptied; `TRANQUE` =
+ *  the board locked and the lower pip-count team takes the round. Drives the
+ *  end-of-round overlay copy in `GameTable`. */
+export type RoundEndKind = "DOMINO" | "TRANQUE";
+
 export interface RoundEndPayload {
   points: number;
   winnerTeam: Team;
   scores: Scores;
+  kind: RoundEndKind;
 }
 
 export interface MatchEndPayload {
   winnerTeam: Team;
   scores: Scores;
+  /** Carried over from the final round so the results screen can show the
+   *  closing play (ADR-010). */
+  kind: RoundEndKind;
+  points: number;
 }
 
 export interface PlayerDisconnectedPayload {

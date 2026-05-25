@@ -117,3 +117,13 @@ The over-the-wire suite (`backend/tests/integration/`, `make test-e2e`)
 asserts the authenticated path the guard protects: REST register → JWT → WS
 `/game` connect with `auth:{token}` → solo match to `match_end`. The negative
 case — connect refused without a token — is `test_connect_rejected_without_token`.
+
+## Addendum (2026-05-25) — `/tutorial/:level` stays public — RATIFIED
+
+The patch above listed `/tutorial/:level` among protected routes. The Frontend
+agent implemented it **public** instead, because Landing offers a "VER TUTORIAL"
+call-to-action to unauthenticated visitors and gating it would break that
+pre-registration funnel. The Architect **ratifies** this: the tutorial is a
+read-only, no-backend funnel screen with nothing to authorize, and keeping it
+open is the better product call. Public routes are therefore `/` (Splash),
+`/welcome` (Landing), and `/tutorial/:level`; everything else is guarded.
