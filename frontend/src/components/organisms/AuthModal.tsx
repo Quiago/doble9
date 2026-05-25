@@ -19,10 +19,12 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg("");
     try {
       if (isLogin) {
         await login({ identifier: email, password });
@@ -35,7 +37,16 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     } catch (err: any) {
       dlog("error", "auth failed", err);
       let errMsg = err.message || "Error de autenticación";
-      if (err.body?.code === "unprocessable_entity" && err.body?.details?.errors) {
+      
+      // FastAPI validation error fallback
+      if (err.body?.detail && Array.isArray(err.body.detail)) {
+        const errs = err.body.detail;
+        if (errs.length > 0) {
+          const field = errs[0].loc?.[errs[0].loc.length - 1];
+          const msg = errs[0].msg;
+          errMsg = `${field}: ${msg}`;
+        }
+      } else if (err.body?.code === "unprocessable_entity" && err.body?.details?.errors) {
         const errs = err.body.details.errors as any[];
         if (errs.length > 0) {
           const field = errs[0].loc?.[errs[0].loc.length - 1];
@@ -43,6 +54,10 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           errMsg = `${field}: ${msg}`;
         }
       }
+      if (err.status === 401) {
+        errMsg = "Credenciales inválidas";
+      }
+      setErrorMsg(errMsg);
       toast(errMsg, "error");
     } finally {
       setLoading(false);
@@ -58,7 +73,16 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           alt="Manolito" 
         />
         
-        <h2 className="s-auth__title">{isLogin ? "Iniciar Sesión" : "Crear Perfil"}</h2>
+        <h2 className="s-auth__title">
+          {isLogin ? "INICIAR SESIÓN" : "CREAR CUENTA"}
+        </h2>
+        
+        {errorMsg && (
+          <div className="s-auth__error" style={{ background: "rgba(255,0,0,0.2)", border: "1px solid #ff4444", padding: "10px", borderRadius: "8px", color: "#ff4444", marginBottom: "1rem", textAlign: "center", fontSize: "0.9rem" }}>
+            {errorMsg}
+          </div>
+        )}
+
         <p className="s-auth__sub">
           {isLogin 
             ? "Continúa guardando tus estadísticas y progresos."

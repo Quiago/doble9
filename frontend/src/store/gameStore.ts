@@ -21,6 +21,8 @@ interface GameSlice {
   chat: ChatEntry[];
   /** Highest applied server `lastActionAt` — reconnect replay anchor (ADR-004). */
   sinceActionAt: number;
+  /** Previous hand for rollback (used on error). */
+  previousHand: TileId[] | null;
 
   /** Replace with a full authoritative snapshot (`game_state`). */
   setSnapshot: (g: GameState) => void;
@@ -30,6 +32,8 @@ interface GameSlice {
   applyScores: (scores: Scores) => void;
   /** Optimistic local feedback — removes tile from own hand pre-confirmation. */
   optimisticRemoveFromHand: (tileId: TileId, side: BoardSide) => void;
+  /** Rollback optimistic state (called on error/resync). */
+  rollbackOptimistic: () => void;
   pushChat: (entry: ChatEntry) => void;
   reset: () => void;
 }
@@ -38,9 +42,10 @@ export const useGameStore = create<GameSlice>((set) => ({
   game: null,
   chat: [],
   sinceActionAt: 0,
+  previousHand: null,
 
   setSnapshot: (g) =>
-    set({ game: g, sinceActionAt: Math.max(g.lastActionAt, 0) }),
+    set({ game: g, sinceActionAt: Math.max(g.lastActionAt, 0), previousHand: null }),
 
   applyBoard: (board, turn) =>
     set((s) =>
@@ -57,7 +62,17 @@ export const useGameStore = create<GameSlice>((set) => ({
     set((s) => {
       if (!s.game?.hand) return s;
       return {
+        previousHand: s.game.hand,
         game: { ...s.game, hand: s.game.hand.filter((t) => t !== tileId) },
+      };
+    }),
+
+  rollbackOptimistic: () =>
+    set((s) => {
+      if (!s.game || !s.previousHand) return s;
+      return {
+        game: { ...s.game, hand: s.previousHand },
+        previousHand: null,
       };
     }),
 

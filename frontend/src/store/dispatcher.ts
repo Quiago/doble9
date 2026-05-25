@@ -103,6 +103,8 @@ class Dispatcher {
 
     switch (msg.event) {
       case "game_state":
+        // Reset optimistic state since server sent authoritative snapshot
+        useGameStore.getState().rollbackOptimistic();
         gs.setSnapshot(msg.payload as GameState);
         this.emit("game_state", msg.payload);
         break;
@@ -149,6 +151,7 @@ class Dispatcher {
         break;
 
       case "error":
+        useGameStore.getState().rollbackOptimistic();
         ui.toast(
           (msg.payload as { message?: string }).message ?? "Error",
           "error",
