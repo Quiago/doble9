@@ -10,6 +10,14 @@ cambio".
 
 ## [Unreleased]
 
+### Frontend
+
+#### Fixed (auth/transport en modo mock, 2026-05-25)
+- **`useAuth.login/register`** llamaban siempre a `socketTransport.reconnect()`
+  (transporte real) incluso con `VITE_USE_MOCKS=true`, pisando `wsFake` y dejando
+  la mesa vacía tras login. Gateado con `!USE_MOCKS` (mismo idiom que `main.tsx`);
+  `bootstrap()` ya no lo hacía. Con mocks=false sigue reconectando normal.
+
 ### Architect
 
 #### Added (bugs de jugabilidad — contrato, 2026-05-25)

@@ -5,6 +5,11 @@ import { api } from "@/services/api";
 import { socketTransport } from "@/services/websocket";
 import type { LoginRequest, RegisterRequest } from "@shared/api";
 
+// En modo mock, wsFake es el transporte; llamar al socketTransport real lo pisa
+// y deja la mesa vacía tras login (bootstrap nunca lo hacía). Gateado igual que
+// main.tsx. AGENT: Frontend.
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
+
 export function useAuth() {
   const token = useUserStore((s) => s.token);
   const user = useUserStore((s) => s.user);
@@ -15,7 +20,7 @@ export function useAuth() {
     async (data: LoginRequest) => {
       const res = await api.login(data);
       setAuth(res.token, res.user);
-      socketTransport.reconnect();
+      if (!USE_MOCKS) socketTransport.reconnect();
       try {
         const stats = await api.userStats(res.user.id);
         useUserStore.getState().setStats(stats);
@@ -31,7 +36,7 @@ export function useAuth() {
     async (data: RegisterRequest) => {
       const res = await api.register(data);
       setAuth(res.token, res.user);
-      socketTransport.reconnect();
+      if (!USE_MOCKS) socketTransport.reconnect();
       try {
         const stats = await api.userStats(res.user.id);
         useUserStore.getState().setStats(stats);
