@@ -10,6 +10,7 @@ import type {
   Seat,
   Pip,
   BoardSide,
+  TileId,
 } from "@shared/game";
 import { dispatcher } from "@/store/dispatcher";
 import { useGameStore } from "@/store/gameStore";
@@ -459,13 +460,18 @@ export class TableScene extends Phaser.Scene {
     if (ev.kind === "placed") {
       const { p } = ev;
       this.seatCounts[p.bySeat] = p.handCount;
-      if (p.bySeat === this.mySeat) {
-        this.applyMyPlacement(p);
+      this.board.sync(p.board, p.side);
+      // Tiles are globally unique: a placed tile that exists in MY hand sprites
+      // can only be mine, so remove it by id regardless of how `bySeat`/`mySeat`
+      // resolved (mySeat falls back to 0 if the user wasn't hydrated when the
+      // first snapshot landed — that mis-routing left the played tile in hand).
+      const mine = this.removeFromHand(p.tile.id);
+      if (mine) {
+        this.layout();
         this.after(120, done);
       } else {
         this.activeSeat = p.bySeat;
         this.activeLabel = "Jugando…";
-        this.board.sync(p.board, p.side);
         this.layoutOpponents();
         this.layout();
         this.after(PLACE_MS, done);
@@ -481,16 +487,15 @@ export class TableScene extends Phaser.Scene {
     this.after(PASS_MS, done);
   }
 
-  /** Own tile already left the hand optimistically; reconcile board + sprite. */
-  private applyMyPlacement(p: TilePlacedPayload) {
-    this.board.sync(p.board, p.side);
-    const idx = this.hand.findIndex((h) => h.tileId === p.tile.id);
-    if (idx >= 0) {
-      this.hand[idx].destroy();
-      this.hand.splice(idx, 1);
-      this.positionHand();
-    }
-    this.layout();
+  /** Remove a tile sprite from the dock by id (tile ids are globally unique).
+   *  Returns true if it was ours. Idempotent: a no-op if already gone. */
+  private removeFromHand(tileId: TileId): boolean {
+    const idx = this.hand.findIndex((h) => h.tileId === tileId);
+    if (idx < 0) return false;
+    this.hand[idx].destroy();
+    this.hand.splice(idx, 1);
+    this.positionHand();
+    return true;
   }
 
   private showPassFx(seat: Seat) {

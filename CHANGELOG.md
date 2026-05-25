@@ -12,6 +12,16 @@ cambio".
 
 ### Frontend
 
+#### Fixed (ficha jugada se quedaba en mano, 2026-05-25)
+- **Bug**: al jugar (p. ej. 9-4) la ficha aparecía en el tablero **y** seguía en
+  la mano. La baja del sprite del dock estaba gateada por `p.bySeat === mySeat` en
+  `TableScene.renderPaced`; `mySeat` cae a `0` si el usuario aún no estaba
+  hidratado al llegar el primer `game_state`, así que la jugada propia se
+  enrutaba como de un rival y nunca se quitaba de la mano. **Fix**: quitar la
+  ficha por id (las fichas son únicas globalmente → una ficha colocada que esté
+  en mis sprites solo puede ser mía), idempotente, sin depender de `bySeat`.
+  `applyMyPlacement` → `removeFromHand(tileId)`.
+
 #### Fixed (auth/transport en modo mock, 2026-05-25)
 - **`useAuth.login/register`** llamaban siempre a `socketTransport.reconnect()`
   (transporte real) incluso con `VITE_USE_MOCKS=true`, pisando `wsFake` y dejando
