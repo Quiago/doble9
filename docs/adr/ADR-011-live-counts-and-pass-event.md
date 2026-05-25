@@ -77,3 +77,20 @@ recibe. El backend ya lo emite (`runtime.py` → `_translate` rama
   `test_full_solo_game_to_match_end` para aseverar que cada `tile_placed`
   trae `handCount` y que decrece para un mismo asiento.
 - Unit backend: `handCount == 10 - jugadas_del_asiento`.
+
+## Addendum (2026-05-25) — `player_passed` debe bufferizarse para reconexión
+
+Hallazgo del agente Backend durante la integración: `player_passed` se emite en
+`runtime.py` pero **no está en el set `_PUBLIC`**, por lo que no entra al
+`_buffer` de replay-delta de reconexión (ADR-004). Efecto: un cliente que se
+reconecta justo tras un "PASO" solo lo recibe vía `game_state` completo, nunca
+como delta — inconsistente con el resto de eventos de juego (`tile_placed`,
+`turn_changed`, `round_end`, …) que sí se bufferizan.
+
+**Decisión**: `player_passed` es un evento de juego autoritativo con el mismo
+ciclo de vida que `tile_placed`; **debe** estar en `_PUBLIC`. No cambia el
+contrato del cable (ya viajaba); solo corrige qué se reproduce en reconexión.
+
+**Backend**: añadir `"player_passed"` a `_PUBLIC` en `src/ws/runtime.py`. Test:
+tras un pase, el `_buffer` (o el delta de `replay(since=...)`) contiene el
+envelope `player_passed`. `make check` verde + entrada CHANGELOG.

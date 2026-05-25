@@ -21,6 +21,13 @@ cambio".
   **no** es bug de backend (legalidad correcta, probada por e2e) sino del render
   del tablero + resolución del lado de drop en el FE → directiva Frontend.
 
+#### Decided (ADR-011 addendum — reconexión, 2026-05-25)
+- **`player_passed` debe bufferizarse**: hallazgo del Backend — el pase se emite
+  pero falta en `_PUBLIC` de `runtime.py`, así que no entra al replay-delta de
+  reconexión (ADR-004). Decisión: es evento de juego autoritativo y debe estar en
+  `_PUBLIC`. No cambia el contrato del cable. Directiva mínima al Backend (+test
+  de buffer). Documentado en addendum de ADR-011.
+
 #### Verified (integración ADR-011, 2026-05-25)
 - **Merge `be/work` (handCount) + `fe/work` (bugs A–D) a `main`**: ambas ramas
   partían de `66b6a4d` y tocaban territorios disjuntos; `be` por fast-forward, `fe`
