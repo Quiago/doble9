@@ -112,6 +112,9 @@ class Dispatcher {
       case "tile_placed": {
         const p = msg.payload as TilePlacedPayload;
         gs.applyBoard(p.board, gs.game?.turn ?? null);
+        // ADR-011: refresh the rival's live count from the authoritative
+        // `handCount` so the table stops showing stale 9/10 after a play.
+        gs.setSeatTileCount(p.bySeat, p.handCount);
         this.emit("tile_placed", p); // Phaser animates to final position
         break;
       }

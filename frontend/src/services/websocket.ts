@@ -20,6 +20,9 @@ const SERVER_EVENTS: ServerEvent[] = [
   "round_end",
   "match_end",
   "error",
+  // ADR-011: without this listener the socket never delivers the pass event
+  // and the dispatcher handler is dead code.
+  "player_passed",
 ];
 
 class SocketTransport implements Transport {
