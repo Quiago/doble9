@@ -12,7 +12,19 @@ cambio".
 
 ### Frontend
 
-#### Fixed (doble instancia Phaser por StrictMode — crash de render, 2026-05-26)
+#### Fixed (desincronización de la mano — dock como proyección de game.hand, 2026-05-26)
+- **Bugs**: (1) la 1ª ficha jugada se quedaba en la mano (las siguientes sí salían);
+  (2) en ronda nueva el humano arrancaba con menos de 10 fichas (6 observadas)
+  mientras los rivales sí tenían 10. **Causa raíz común**: el dock de Phaser
+  (`this.hand`) se mantenía de forma **imperativa** (alta en `rebuildHand` solo en
+  `game_state`, baja por evento `tile_placed` paceado) → **dos fuentes de verdad**
+  que derivaban en carreras cola/snapshot. **Fix (senior, simple)**: el dock pasa a
+  ser **proyección pura de `game.hand`** (la fuente autoritativa, que ya tiene la
+  baja optimista, el snapshot del nuevo reparto y el rollback). Nuevo `syncHand(ids)`
+  reconcilia sprites por diff (reusa/crea/destruye, idempotente, preserva orden) y se
+  dispara con una suscripción a `useGameStore` (guardada por referencia de `hand`
+  para no trabajar de más). El pacing de `tile_placed` ya **no** toca la mano, solo
+  el tablero y la etiqueta de turno. Eliminados `rebuildHand` y `removeFromHand`.
 - **Causa raíz** del "la ficha jugada se queda en mano" (el server SÍ aceptaba la
   jugada): `React.StrictMode` doble-monta el efecto en dev y `Phaser.Game.destroy()`
   es asíncrono → no destruye el primer juego antes del remonte → **dos `Phaser.Game`

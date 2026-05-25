@@ -10,7 +10,6 @@ import type {
   Seat,
   Pip,
   BoardSide,
-  TileId,
 } from "@shared/game";
 import { dispatcher } from "@/store/dispatcher";
 import { useGameStore } from "@/store/gameStore";
@@ -118,6 +117,20 @@ export class TableScene extends Phaser.Scene {
 
     const snap = useGameStore.getState().game;
     if (snap) this.onSnapshot(snap);
+
+    // The dock is a pure projection of the authoritative hand: any change to
+    // `game.hand` (optimistic removal on play, fresh deal on a new round,
+    // rollback on error) reconciles the sprites. Single source of truth.
+    let lastHand = snap?.hand;
+    this.offBus.push(
+      useGameStore.subscribe((state) => {
+        const hand = state.game?.hand;
+        if (hand !== lastHand) {
+          lastHand = hand;
+          this.syncHand(hand ?? []);
+        }
+      }),
+    );
 
     this.scale.on("resize", this.layout, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -417,7 +430,7 @@ export class TableScene extends Phaser.Scene {
         g.hand?.length ?? 0
       } board=${g.board.tiles.length}`,
     );
-    this.rebuildHand(g.hand ?? []);
+    this.syncHand(g.hand ?? []);
     this.board.sync(g.board);
     this.layout();
   }
@@ -461,14 +474,11 @@ export class TableScene extends Phaser.Scene {
       const { p } = ev;
       this.seatCounts[p.bySeat] = p.handCount;
       this.board.sync(p.board, p.side);
-      // Tiles are globally unique: a placed tile that exists in MY hand sprites
-      // can only be mine, so remove it by id regardless of how `bySeat`/`mySeat`
-      // resolved (mySeat falls back to 0 if the user wasn't hydrated when the
-      // first snapshot landed — that mis-routing left the played tile in hand).
-      const mine = this.removeFromHand(p.tile.id);
-      if (mine) {
+      // The dock mirrors `game.hand` via the store subscription (syncHand), so
+      // we never touch the hand here — this only paces the board + label.
+      if (p.bySeat === this.mySeat) {
         this.layout();
-        this.after(120, done);
+        this.after(120, done); // my move was already shown optimistically
       } else {
         this.activeSeat = p.bySeat;
         this.activeLabel = "Jugando…";
@@ -485,17 +495,6 @@ export class TableScene extends Phaser.Scene {
     this.layoutOpponents();
     this.showPassFx(ev.seat);
     this.after(PASS_MS, done);
-  }
-
-  /** Remove a tile sprite from the dock by id (tile ids are globally unique).
-   *  Returns true if it was ours. Idempotent: a no-op if already gone. */
-  private removeFromHand(tileId: TileId): boolean {
-    const idx = this.hand.findIndex((h) => h.tileId === tileId);
-    if (idx < 0) return false;
-    this.hand[idx].destroy();
-    this.hand.splice(idx, 1);
-    this.positionHand();
-    return true;
   }
 
   private showPassFx(seat: Seat) {
@@ -556,16 +555,39 @@ export class TableScene extends Phaser.Scene {
     });
   }
 
-  private rebuildHand(ids: string[]) {
-    this.hand.forEach((h) => h.destroy());
+  /** Reconcile the dock to mirror the authoritative hand (`game.hand`): the
+   *  single source of truth. Reuses sprites whose id is still present, creates
+   *  the new ones, destroys the gone ones. Idempotent — a no-op if the set is
+   *  unchanged, so it's cheap to call on every store change. This removes the
+   *  imperative add/remove drift that left played tiles in hand and dealt a
+   *  short hand on a new round. */
+  private syncHand(ids: readonly string[]) {
+    const current = new Map(this.hand.map((s) => [s.tileId, s]));
+    const target = new Set(ids);
+    let changed = false;
+
+    // Drop sprites no longer in the hand (played, or stale from a new deal).
+    for (const [id, sprite] of current) {
+      if (!target.has(id)) {
+        sprite.destroy();
+        current.delete(id);
+        changed = true;
+      }
+    }
+
+    // Rebuild the array in the authoritative order, creating what's missing.
     this.hand = ids.map((id) => {
+      const existing = current.get(id);
+      if (existing) return existing;
+      changed = true;
       const ends = id.split("-").map(Number) as [Pip, Pip];
       const t = new TileSprite(this, id, ends, HAND_HALF, "vertical");
       this.handLayer.add(t);
       this.makeDraggable(t);
       return t;
     });
-    this.positionHand();
+
+    if (changed) this.positionHand();
   }
 
   // ── Drag-and-drop (CLAUDE.md §4.4) ──────────────────────────────────────
