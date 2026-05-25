@@ -181,6 +181,15 @@ cambio".
 
 ### Backend
 
+#### Added (handCount en `tile_placed` — ADR-011, 2026-05-25)
+- `src/ws/runtime.py` (`_translate`, rama `tile_placed`): el envelope ahora
+  lleva `handCount` = fichas restantes del asiento que jugó (`bySeat`),
+  autoritativo (`len(self.sm.hands[bySeat])` tras decrementar la mano en
+  `state_machine.play_tile`). Sobrevive a reconexión y ráfagas de bots; el FE
+  fija `players[bySeat].tilesCount = handCount`. `player_passed` ya se emitía
+  en `_translate` — confirmado, sin cambios. +1 test en `test_ws_runtime.py`
+  (conteo del humano decrece 9→8→7); `make check` verde (104 tests).
+
 #### Added
 - Núcleo del juego server-authoritative en `backend/src/game/` (Bloque A,
   sin deps de red/BD): `tile.py` (set doble-9 = 55 fichas, id canónico

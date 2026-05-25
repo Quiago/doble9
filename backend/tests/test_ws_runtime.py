@@ -95,6 +95,36 @@ def test_round_and_match_end_carry_kind_and_points() -> None:
     assert seen_match  # a full game always ends in match_end
 
 
+def test_tile_placed_carries_decreasing_hand_count() -> None:
+    # ADR-011: each tile_placed envelope exposes `handCount` = tiles left in
+    # the playing seat's hand, authoritative. For the human (seat 0) it must
+    # equal 10 - (plays by seat 0) and strictly decrease across their turns.
+    rt = _runtime(seed=11)
+    rt.apply_start("u0")
+
+    human_counts: list[int] = []
+    for _ in range(20_000):
+        if rt.sm.status == "FINISHED":
+            break
+        mv = _human_move(rt)
+        disp = rt.apply_play("u0", *mv) if mv else rt.apply_pass("u0")
+        assert disp.error is None
+        for e in disp.public:
+            if e["event"] == "tile_placed":
+                # every placement carries the count for whoever played it
+                assert isinstance(e["payload"]["handCount"], int)
+                assert 0 <= e["payload"]["handCount"] <= 10
+                if e["payload"]["bySeat"] == 0:
+                    human_counts.append(e["payload"]["handCount"])
+        if len(human_counts) >= 3:
+            break
+
+    assert len(human_counts) >= 3  # the human played at least three tiles
+    # 10 tiles dealt; the n-th placement leaves 10 - n.
+    assert human_counts[:3] == [9, 8, 7]
+    assert human_counts == sorted(human_counts, reverse=True)
+
+
 def test_reconnect_snapshot_vs_delta() -> None:
     rt = _runtime()
     rt.apply_start("u0")

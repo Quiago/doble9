@@ -14,7 +14,7 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from src.core.redis import RedisMatchStore
 from src.game.state_machine import MatchStateMachine, Player, Result
@@ -156,6 +156,10 @@ class MatchRuntime:
                         "tile": payload["tile"],
                         "side": payload["side"],
                         "board": payload["board"],
+                        # ADR-011: authoritative remaining-tile count for the
+                        # seat that just played (hand already decremented in
+                        # state_machine.play_tile before this Result).
+                        "handCount": len(self.sm.hands[cast(int, payload["bySeat"])]),
                     },
                 )
             )
