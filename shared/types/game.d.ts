@@ -150,6 +150,13 @@ export interface TilePlacedPayload {
   tile: Tile;
   side: BoardSide;
   board: Board;
+  /** Fichas restantes en la mano de `bySeat` tras esta jugada (ADR-011).
+   *  Autoritativo: el FE hace `players[bySeat].tilesCount = handCount`. */
+  handCount: number;
+}
+
+export interface PlayerPassedPayload {
+  bySeat: Seat;
 }
 
 export interface TurnChangedPayload {

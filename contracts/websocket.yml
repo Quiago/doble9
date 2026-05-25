@@ -53,6 +53,7 @@ channels:
       game_state:           { $ref: "#/components/messages/GameStateMsg" }
       tile_placed:          { $ref: "#/components/messages/TilePlaced" }
       turn_changed:         { $ref: "#/components/messages/TurnChanged" }
+      player_passed:        { $ref: "#/components/messages/PlayerPassed" }
       special_play:         { $ref: "#/components/messages/SpecialPlay" }
       chat_message:         { $ref: "#/components/messages/ChatMessage" }
       player_joined:        { $ref: "#/components/messages/PlayerJoined" }
@@ -190,6 +191,11 @@ components:
     PlayerDisconnected:
       name: player_disconnected
       payload: { $ref: "#/components/schemas/ServerEnvelope" }
+    PlayerPassed:
+      name: player_passed
+      # payload = PlayerPassedPayload: { bySeat } (ADR-011). El FE debe
+      # registrarlo en SERVER_EVENTS o nunca lo recibe.
+      payload: { $ref: "#/components/schemas/ServerEnvelope" }
     RoundEnd:
       name: round_end
       # payload = RoundEndPayload: { points, winnerTeam, scores, kind } (ADR-010).
@@ -215,9 +221,9 @@ components:
       properties:
         event:
           type: string
-          enum: [game_state, tile_placed, turn_changed, special_play,
-                 chat_message, player_joined, player_disconnected,
-                 round_end, match_end, error]
+          enum: [game_state, tile_placed, turn_changed, player_passed,
+                 special_play, chat_message, player_joined,
+                 player_disconnected, round_end, match_end, error]
         matchId: { type: string }
         payload: { type: object, additionalProperties: true }
         timestamp: { type: integer, description: epoch ms, server clock }

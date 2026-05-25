@@ -12,6 +12,15 @@ cambio".
 
 ### Architect
 
+#### Added (bugs de jugabilidad — contrato, 2026-05-25)
+- **ADR-011 + contrato**: `TilePlacedPayload` gana `handCount` (fichas restantes
+  del asiento que jugó, autoritativo) y se formaliza `player_passed`
+  (`PlayerPassedPayload {bySeat}`) en `shared/types/game.d.ts` y en el enum +
+  mensajes de `contracts/websocket.yml`. Desbloquea: conteos de rivales en vivo
+  y aviso de "PASO". Diagnóstico: la jugada legal rechazada (6-9 sobre extremo 6)
+  **no** es bug de backend (legalidad correcta, probada por e2e) sino del render
+  del tablero + resolución del lado de drop en el FE → directiva Frontend.
+
 #### Added (cierre de integración, 2026-05-25)
 - **ADR-010 + contrato**: `round_end`/`match_end` ahora declaran `kind`
   (`"DOMINO"|"TRANQUE"`) y `match_end` también `points` en
