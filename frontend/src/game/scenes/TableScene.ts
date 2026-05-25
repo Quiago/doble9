@@ -19,7 +19,6 @@ import { A } from "@/store/types";
 import { PLAYER_COLORS } from "@/lib/constants";
 import { dlog } from "@/lib/debug";
 import { hex } from "../tokens";
-import { TILE_BACK } from "../textures";
 import { TileSprite } from "../entities/TileSprite";
 import { BoardGroup } from "../entities/BoardGroup";
 
@@ -27,6 +26,12 @@ const SIDE_L = 200;
 const SIDE_R = 230;
 const DOCK_H = 104;
 const HAND_HALF = 40; // game-screen.jsx hand DominoTile size=40
+
+// V1: gutters reserved inside the table so the chain never collides with the
+// lateral/top opponent avatars; smaller gutter where no avatar sits.
+const GUTTER_SIDE = 88; // lateral avatar (disc + face-down stack)
+const GUTTER_TOP = 82; // top avatar
+const GUTTER_MIN = 24;
 
 // Pacing: bots arrive in a burst (several tile_placed/turn_changed at once).
 // We replay the PRESENTATION sequentially so the user SEES each rival act.
@@ -162,9 +167,12 @@ export class TableScene extends Phaser.Scene {
       { tl: 0, tr: 0, bl: 24, br: 24 },
     );
 
-    // Tell the chain how much room it has so it can wrap/scale (BUG D), then
-    // base drop geometry on what's actually rendered (paced) board sprite.
-    this.board.setBounds(t.width - 24, t.height - 24);
+    // V1: confine + center the chain inside the table, reserving gutters for
+    // whichever opponent avatars are present. Done BEFORE drop-zone geometry
+    // so getLeftEndWorldPos/getRightEndWorldPos use the centered positions.
+    const a = this.boardArea(t);
+    this.board.setBounds(a.width, a.height);
+    this.board.setCenter(a.cx, a.cy);
     const isBoardEmpty = this.board.tileCount === 0;
 
     if (isBoardEmpty) {
@@ -211,9 +219,23 @@ export class TableScene extends Phaser.Scene {
       }
     }
 
-    this.board.setCenter(t.centerX, t.centerY);
     this.layoutDock();
     this.layoutOpponents();
+  }
+
+  /** Inner region (and its center) where the chain may render — table rect
+   *  minus the gutters of whichever opponent avatars exist (V1). */
+  private boardArea(t: Phaser.Geom.Rectangle) {
+    const players = useGameStore.getState().game?.players ?? [];
+    const others = players.filter((p) => p.seat !== this.mySeat);
+    const gTop = others[0] ? GUTTER_TOP : GUTTER_MIN; // N avatar
+    const gLeft = others[1] ? GUTTER_SIDE : GUTTER_MIN; // W avatar
+    const gRight = others[2] ? GUTTER_SIDE : GUTTER_MIN; // E avatar
+    const width = Math.max(t.width - gLeft - gRight, 120);
+    const height = Math.max(t.height - gTop - GUTTER_MIN, 120);
+    const cx = t.x + gLeft + width / 2;
+    const cy = t.y + gTop + height / 2;
+    return { width, height, cx, cy };
   }
 
   private woodImg?: Phaser.GameObjects.Image;
@@ -343,13 +365,27 @@ export class TableScene extends Phaser.Scene {
       this.opponents.add(av);
 
       // UX: render each rival hand as N face-down backs matching the live count
-      // (ADR-011), not just a number.
+      // (ADR-011). V3: drawn in mahogany with a gold border so they read against
+      // the dark table instead of disappearing into it.
       const n = Math.min(count, 12);
+      const bw = 11;
+      const bh = 22;
+      const madera = hex("--madera");
+      const dorado = hex("--dorado");
       for (let i = 0; i < n; i++) {
-        const back = this.add.image(0, 0, TILE_BACK).setDisplaySize(14, 28);
-        if (s.col) back.setPosition(s.x, s.y + 52 + i * 13).setAngle(90);
-        else back.setPosition(s.x - (n * 15) / 2 + i * 15, s.y + 56);
-        back.setTint(0xdddddd);
+        let back: Phaser.GameObjects.Rectangle;
+        if (s.col) {
+          // Lateral seats: backs lie sideways, stacked vertically.
+          back = this.add
+            .rectangle(s.x, s.y + 52 + i * (bw + 2), bh, bw, madera, 1)
+            .setStrokeStyle(1, dorado, 0.55);
+        } else {
+          // Top seat: a fanned row of upright backs.
+          const x = s.x - (n * (bw + 2)) / 2 + i * (bw + 2) + bw / 2;
+          back = this.add
+            .rectangle(x, s.y + 54, bw, bh, madera, 1)
+            .setStrokeStyle(1, dorado, 0.55);
+        }
         this.opponents.add(back);
       }
     }
@@ -458,42 +494,61 @@ export class TableScene extends Phaser.Scene {
   }
 
   private showPassFx(seat: Seat) {
+    const t = this.tableRect;
     let x: number | undefined;
     let y: number | undefined;
+    // Float direction: top avatar floats DOWN (below it), everyone else UP, so
+    // the label never leaves the canvas over the top player (V2).
+    let dir = -1;
 
     if (seat === this.mySeat) {
       x = this.scale.gameSize.width / 2;
-      y = this.scale.gameSize.height - DOCK_H - 20;
+      y = this.scale.gameSize.height - DOCK_H - 28;
     } else {
-      const t = this.tableRect;
       const players = useGameStore.getState().game?.players ?? [];
       const others = players.filter((pl) => pl.seat !== this.mySeat);
-      if (others[0] && others[0].seat === seat) { x = t.centerX; y = t.y + 30; }
-      else if (others[1] && others[1].seat === seat) { x = t.x + 36; y = t.centerY; }
-      else if (others[2] && others[2].seat === seat) { x = t.right - 36; y = t.centerY; }
+      if (others[0] && others[0].seat === seat) {
+        x = t.centerX; y = t.y + 64; dir = 1; // below the N avatar
+      } else if (others[1] && others[1].seat === seat) {
+        x = t.x + GUTTER_SIDE + 8; y = t.centerY - 28; // W → toward center
+      } else if (others[2] && others[2].seat === seat) {
+        x = t.right - GUTTER_SIDE - 8; y = t.centerY - 28; // E → toward center
+      }
     }
 
-    if (x !== undefined && y !== undefined) {
-      const txt = this.add.text(x, y - 20, "¡PASO!", {
+    if (x === undefined || y === undefined) return;
+
+    // Clamp the label box inside the table so it's never cut off by an edge.
+    const PAD = 52;
+    x = Phaser.Math.Clamp(x, t.x + PAD, t.right - PAD);
+    y = Phaser.Math.Clamp(y, t.y + 20, t.bottom - 20);
+
+    const txt = this.add
+      .text(x, y, "¡PASO!", {
         fontFamily: "Montserrat, sans-serif",
         fontStyle: "900",
-        fontSize: "28px",
+        fontSize: "26px",
         color: "#ff4444",
         stroke: "#000000",
         strokeThickness: 6,
-      }).setOrigin(0.5).setAlpha(0);
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(60)
+      .setAlpha(0)
+      .setScale(0.7);
 
-      this.tweens.add({
-        targets: txt,
-        y: y - 50,
-        alpha: 1,
-        duration: 300,
-        ease: "Back.out",
-        yoyo: true,
-        hold: 1200,
-        onComplete: () => txt.destroy()
-      });
-    }
+    this.tweens.add({
+      targets: txt,
+      y: y + dir * 16, // small in-bounds travel
+      alpha: 1,
+      scale: 1,
+      duration: 280,
+      ease: "Back.out",
+      yoyo: true,
+      hold: 1100,
+      onComplete: () => txt.destroy(),
+    });
   }
 
   private rebuildHand(ids: string[]) {

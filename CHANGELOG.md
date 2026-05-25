@@ -169,6 +169,28 @@ cambio".
 
 ### Frontend
 
+#### Fixed (ajustes visuales de jugabilidad V1–V3 — ADR-011, 2026-05-25)
+Sobre el render de los bugs A–D, tres correcciones de las capturas del usuario:
+- **V1 · tablero centrado**: `BoardGroup` ahora centra la cadena en el **área de
+  mesa** (no del canvas) y **centra cada fila por su ocupación real** — antes una
+  fila usaba el ancho de columnas máximo y la cadena quedaba pegada a la izquierda,
+  pisando el avatar del asiento lateral. `TableScene.boardArea()` reserva
+  **gutters** para los avatares presentes (lateral 88px, superior 82px; 24px donde
+  no hay avatar) y fija `setBounds`/`setCenter` antes de calcular las zonas de
+  drop. Si no cabe, escala la ficha (24→8 px/half) antes de desbordar. Verificado
+  a ojo: cadena de 12 fichas centrada en ventana ancha y **envuelta en 2 filas
+  centradas** en ventana angosta, sin solapar avatares; dobles perpendiculares.
+- **V2 · cartel "PASO" responsive**: en `showPassFx` el cartel se posiciona
+  **dentro del área de mesa** con `clamp` a los bordes; para el asiento superior
+  aparece **por debajo** del avatar (antes se cortaba sobre él), para los laterales
+  hacia el centro, y flota ±16px sin salir del contenedor. Verificado a ojo.
+- **V3 · reversos de fichas rivales visibles**: las manos boca abajo se dibujan
+  como rectángulos en `--madera` con borde `--dorado` (antes reversos casi negros
+  sobre fondo negro, no se contaban). El número de fichas se mantiene.
+- Verificación: `tsc -b` + `npm run build` verdes; revisado a ojo en mock
+  (`VITE_USE_MOCKS=true`) en ventana ancha y angosta. Nota: el backend ya está
+  arriba en :8000; queda pendiente una pasada con `VITE_USE_MOCKS=false`.
+
 #### Fixed (bugs de jugabilidad A–D — ADR-011, 2026-05-25)
 - **BUG A · conteos de rivales en vivo**: `gameStore.setSeatTileCount(seat, n)`
   nuevo; el dispatcher, en `tile_placed`, aplica el `handCount` autoritativo

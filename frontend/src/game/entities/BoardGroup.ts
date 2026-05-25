@@ -83,17 +83,20 @@ export class BoardGroup {
     const { half, cols, rows } = this.fitHalf(tiles.length);
     const cell = half * 2 + GAP;
     const rowH = half * 2 + GAP;
-    const gridW = cols * cell;
     const gridH = rows * rowH;
-    const startX = -gridW / 2 + cell / 2;
     const startY = -gridH / 2 + rowH / 2;
 
     tiles.forEach((t, i) => {
       const row = Math.floor(i / cols);
       const inRow = i % cols;
+      // Center EACH row by its own occupancy so a short/last row (and the
+      // common single-row case) sits centered instead of bunched to the left
+      // (V1 — otherwise the first tile overruns the lateral avatar).
+      const tilesInRow = Math.min(cols, tiles.length - row * cols);
+      const rowStartX = -((tilesInRow - 1) * cell) / 2;
       // Serpentine: even rows L→R, odd rows R→L so the chain "snakes".
-      const col = row % 2 === 0 ? inRow : cols - 1 - inRow;
-      const x = startX + col * cell;
+      const col = row % 2 === 0 ? inRow : tilesInRow - 1 - inRow;
+      const x = rowStartX + col * cell;
       const y = startY + row * rowH;
 
       const isDouble = t.ends[0] === t.ends[1];
