@@ -21,6 +21,17 @@ cambio".
   **no** es bug de backend (legalidad correcta, probada por e2e) sino del render
   del tablero + resolución del lado de drop en el FE → directiva Frontend.
 
+#### Verified (integración ADR-011, 2026-05-25)
+- **Merge `be/work` (handCount) + `fe/work` (bugs A–D) a `main`**: ambas ramas
+  partían de `66b6a4d` y tocaban territorios disjuntos; `be` por fast-forward, `fe`
+  por merge (CHANGELOG auto-resuelto). `make check` verde (104 tests), build FE +
+  `tsc -b` verdes en `main`.
+- **Suite e2e extendida** (`tests/integration/test_live_match_e2e.py`): cada
+  `tile_placed` sobre el cable trae `handCount` (int, 0..10) y decrece de forma
+  monótona por asiento *dentro de la ronda* (reset al abrir ronda nueva); todo
+  `player_passed` recibido es un envelope válido con `bySeat ∈ {0..3}`. `make
+  test-e2e` verde (4/4) contra Postgres+Redis reales.
+
 #### Added (cierre de integración, 2026-05-25)
 - **ADR-010 + contrato**: `round_end`/`match_end` ahora declaran `kind`
   (`"DOMINO"|"TRANQUE"`) y `match_end` también `points` en

@@ -228,6 +228,28 @@ async def test_full_solo_game_to_match_end(server: str) -> None:
         for env in placed:
             _assert_chain(env["payload"]["board"])
 
+        # ADR-011: every tile_placed carries the post-play hand count of the
+        # seat that played, authoritative. It decreases monotonically per seat
+        # *within a round*; a fresh round (board reset to just the opener) deals
+        # 10 again, so the per-seat counts reset there too.
+        last_count: dict[int, int] = {}
+        for env in placed:
+            p = env["payload"]
+            board = p["board"]
+            if len(board["tiles"]) == 1 and board["tiles"][0]["order"] == 0:
+                last_count.clear()  # opener of a new round → counts reset
+            seat, hc = p["bySeat"], p["handCount"]
+            assert isinstance(hc, int) and 0 <= hc <= 10, p
+            if seat in last_count:
+                assert hc <= last_count[seat], f"seat {seat} count grew: {p}"
+            last_count[seat] = hc
+
+        # ADR-011: any pass surfaced over the wire is a well-formed envelope the
+        # FE listener (now registered in SERVER_EVENTS) can render as "PASO".
+        for env in (e for e in driver.events if e["event"] == "player_passed"):
+            _assert_envelope(env, "player_passed", driver.match_id)
+            assert env["payload"]["bySeat"] in {0, 1, 2, 3}
+
         # round_end carries the scoring summary the FE overlay renders.
         for env in (e for e in driver.events if e["event"] == "round_end"):
             assert {"points", "winnerTeam", "kind"} <= set(env["payload"])
