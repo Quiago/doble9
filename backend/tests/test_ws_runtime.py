@@ -125,6 +125,33 @@ def test_tile_placed_carries_decreasing_hand_count() -> None:
     assert human_counts == sorted(human_counts, reverse=True)
 
 
+def test_player_passed_enters_reconnect_buffer() -> None:
+    # ADR-011 addendum: `player_passed` is an authoritative game event and must
+    # be in _PUBLIC so it lands in the ADR-004 replay-delta buffer (like
+    # tile_placed/turn_changed). Otherwise a mid-turn reconnect never replays it.
+    rt = _runtime(seed=11)
+    rt.apply_start("u0")
+
+    saw_pass = False
+    for _ in range(20_000):
+        if rt.sm.status == "FINISHED":
+            break
+        mv = _human_move(rt)
+        disp = rt.apply_play("u0", *mv) if mv else rt.apply_pass("u0")
+        assert disp.error is None
+        if any(e["event"] == "player_passed" for e in disp.public):
+            saw_pass = True
+            break
+
+    assert saw_pass  # a pass occurred (human or bot) during the game
+    buffered = [e for e in rt._buffer if e["event"] == "player_passed"]  # noqa: SLF001
+    assert buffered, "player_passed must be buffered for reconnect replay"
+    # A reconnect anchored just before the pass replays it as a delta.
+    pass_ts = buffered[0]["timestamp"]
+    replay = rt.join_events("u0", pass_ts - 1)
+    assert any(e["event"] == "player_passed" for e in replay)
+
+
 def test_reconnect_snapshot_vs_delta() -> None:
     rt = _runtime()
     rt.apply_start("u0")

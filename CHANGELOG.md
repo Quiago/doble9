@@ -234,6 +234,15 @@ cambio".
 
 ### Backend
 
+#### Fixed (gap de reconexión — ADR-011 addendum, 2026-05-25)
+- `src/ws/runtime.py`: `player_passed` añadido al set `_PUBLIC`, así el pase
+  entra al `_buffer` de replay-delta de reconexión (ADR-004) igual que
+  `tile_placed`/`turn_changed`. Antes se emitía pero no se bufferizaba, así que
+  un reconnect a media partida nunca lo replicaba. El evento ya se emitía en
+  `_translate`; no cambia el contrato del cable. +1 test en
+  `test_ws_runtime.py` (tras un pase, el `_buffer` y `join_events(since)` lo
+  contienen); `make check` verde (105 tests).
+
 #### Added (handCount en `tile_placed` — ADR-011, 2026-05-25)
 - `src/ws/runtime.py` (`_translate`, rama `tile_placed`): el envelope ahora
   lleva `handCount` = fichas restantes del asiento que jugó (`bySeat`),

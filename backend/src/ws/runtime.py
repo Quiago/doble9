@@ -35,6 +35,7 @@ _MAX_BOT_STEPS = 10_000
 _PUBLIC = {
     "tile_placed",
     "turn_changed",
+    "player_passed",
     "special_play",
     "chat_message",
     "round_end",
