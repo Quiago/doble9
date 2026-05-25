@@ -123,7 +123,30 @@ cambio".
 
 ### Frontend
 
+#### Added (guard de auth + UX de errores, 2026-05-25)
+- **`<RequireAuth>` en `App.tsx` (ADR-009)**: invariante de ruta — ninguna
+  pantalla protegida (`/menu`, `/play/*`, `/profile/*`, `/settings`, `/store`,
+  `/league`, `/tournament`, `results`, `lobby`) se renderiza sin token. Resuelve
+  el `401 missing bearer token`: el splash saltaba el gate de Landing y se llegaba
+  a `createMatch` sin sesión. En vez de rebotar en silencio, el guard **avisa con
+  un toast** ("Inicia sesión para continuar") y redirige a `/welcome` recordando
+  el `from`. Rutas públicas: `/` (Splash), `/welcome` (Landing) y `/tutorial/:level`
+  (este último se deja **público a propósito** como demo pre-login / embudo de
+  registro — desviación deliberada de la lista del ADR, que lo marcaba protegido).
+- **`Landing.tsx`**: cuando el guard redirige aquí, **auto-abre el `AuthModal`**
+  (el usuario ve el login al instante, sin buscar el botón) y, tras autenticarse,
+  vuelve al `from` recordado en lugar de ir siempre a `/menu`.
+
 #### Fixed
+- **`Setup.tsx` — mensaje de error real (ADR-009)**: leía
+  `err?.response?.data?.detail` (forma axios), descartando el mensaje del backend;
+  ahora usa `ApiException.body.message`. Además, un `401` (sesión expirada a mitad
+  de juego) hace `logout()` + toast guiado ("Tu sesión expiró…") y redirige a
+  `/welcome` con `from`, en vez de mostrar el críptico "missing bearer token".
+- **`TableScene.ts` — build de FE estaba rojo en `main`**: dos accesos
+  `game.board.tiles` tras encadenamiento opcional (`TS2531`) y el cluster muerto
+  `drawDropZone`/`strokeDashedRoundRect` sin llamadas (`TS6133`). Corregido con
+  locales y eliminando el código muerto; `tsc -b` y `npm run build` verdes.
 - WS connect manda el JWT en `auth` (`{ token, clientId }`) — antes solo
   `clientId`, lo que el backend rechazaba (ADR-007). Aplicado por el Architect
   durante la integración; el agente FE debe revisar el diff de `websocket.ts`.

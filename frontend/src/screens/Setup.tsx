@@ -13,7 +13,9 @@ import {
 import { ASSETS } from "@/lib/constants";
 import { useGameNav } from "@/lib/nav";
 import { dlog } from "@/lib/debug";
-import { api } from "@/services/api";
+import { api, ApiException } from "@/services/api";
+import { useUiStore } from "@/store/uiStore";
+import { useUserStore } from "@/store/userStore";
 
 
 const DIFFS = [
@@ -50,10 +52,20 @@ export default function Setup() {
       });
       dlog("ui", `created solo match id=${match.id}`);
       navigate(`/play/match/${match.id}`);
-    } catch (err: any) {
+    } catch (err) {
       dlog("error", "failed to create match", err);
-      const msg = err?.response?.data?.detail || "Error al crear la partida";
-      import("@/store/uiStore").then(m => m.useUiStore.getState().toast(msg, "error"));
+      // Session expired mid-play: guide the user back to login instead of
+      // showing the raw "missing bearer token" (ADR-009).
+      if (err instanceof ApiException && err.status === 401) {
+        useUserStore.getState().logout();
+        useUiStore.getState().toast("Tu sesión expiró. Inicia sesión de nuevo.", "error");
+        navigate("/welcome", { replace: true, state: { from: "/play/solo" } });
+        return;
+      }
+      // Otherwise surface the backend's actual message (ApiException.body.message).
+      const msg =
+        err instanceof ApiException ? err.body.message : "Error al crear la partida";
+      useUiStore.getState().toast(msg, "error");
     } finally {
       setLoading(false);
     }
