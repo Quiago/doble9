@@ -9,6 +9,7 @@ import type {
   BoardSide,
   TurnInfo,
   Scores,
+  Seat,
   ChatMessagePayload,
 } from "@shared/game";
 
@@ -30,6 +31,9 @@ interface GameSlice {
   applyBoard: (board: Board, turn: TurnInfo | null) => void;
   applyTurn: (turn: TurnInfo) => void;
   applyScores: (scores: Scores) => void;
+  /** Authoritative live count for one seat (ADR-011: `tile_placed.handCount`).
+   *  Keeps rival counts fresh during play without waiting for a `game_state`. */
+  setSeatTileCount: (seat: Seat, count: number) => void;
   /** Optimistic local feedback — removes tile from own hand pre-confirmation. */
   optimisticRemoveFromHand: (tileId: TileId, side: BoardSide) => void;
   /** Rollback optimistic state (called on error/resync). */
@@ -57,6 +61,20 @@ export const useGameStore = create<GameSlice>((set) => ({
 
   applyScores: (scores) =>
     set((s) => (s.game ? { game: { ...s.game, scores } } : s)),
+
+  setSeatTileCount: (seat, count) =>
+    set((s) =>
+      s.game
+        ? {
+            game: {
+              ...s.game,
+              players: s.game.players.map((p) =>
+                p.seat === seat ? { ...p, tilesCount: count } : p,
+              ),
+            },
+          }
+        : s,
+    ),
 
   optimisticRemoveFromHand: (tileId) =>
     set((s) => {

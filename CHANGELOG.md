@@ -151,6 +151,41 @@ cambio".
 
 ### Frontend
 
+#### Fixed (bugs de jugabilidad A–D — ADR-011, 2026-05-25)
+- **BUG A · conteos de rivales en vivo**: `gameStore.setSeatTileCount(seat, n)`
+  nuevo; el dispatcher, en `tile_placed`, aplica el `handCount` autoritativo
+  (ADR-011) → los conteos dejan de quedarse congelados en 9/10 sin esperar un
+  `game_state`.
+- **BUG B · aviso de "PASO" + turnos perceptibles**: se registra
+  `player_passed` en `SERVER_EVENTS` (`services/websocket.ts`) — antes el socket
+  nunca lo recibía y el handler del dispatcher era código muerto. En
+  `TableScene` se añade **pacing**: los eventos de jugada entrantes (turno /
+  ficha / paso) se **encolan y reproducen secuencialmente** (~650 ms "Pensando…"
+  antes de jugar, ~320 ms al colocar, ~950 ms el "¡PASO!"), de modo que el bot
+  burst se ve jugada a jugada. Indicador de turno claro: asiento activo resaltado
+  con glow + etiqueta de estado ("Pensando…"/"Jugando…"/"¡No llevó!") y cue en el
+  dock ("TU TURNO · arrastra una ficha" / "Esperando tu turno…"). El estado lógico
+  sigue siendo el del servidor; solo se pacea la presentación.
+- **BUG C · jugada legal rechazada**: en `dragend` el lado se resuelve por
+  **legalidad** (extremos abiertos `leftEnd`/`rightEnd` vs `tile.ends`), no por
+  el píxel del drop (antes `center→right` mandaba el lado equivocado). Si conecta
+  a un solo extremo se juega ese; a ambos, decide el drop; a ninguno, snap-back
+  con toast guía ("Esa ficha no encaja en ningún extremo abierto"). Al levantar
+  la ficha se **resaltan los extremos legales** (marcadores verdes pulsantes).
+- **BUG D · tablero responsive con TODAS las fichas**: `BoardGroup.sync()` deja
+  de truncar (`slice(-7)`) y de apilar en una fila recta; ahora renderiza el
+  tablero completo en **layout serpenteante** (boustrophedon) que envuelve por
+  filas y **escala** el tamaño de ficha (24→8 px/half) para que quepan hasta ~40.
+  Los dobles van **perpendiculares**; la orientación se respeta desde `t.ends`
+  (ADR-010/`is_flipped`), no se recalcula. `setBounds()` re-layouta en resize.
+- **UX · manos rivales boca abajo por conteo**: cada rival muestra N reversos de
+  ficha (sin números) igual a su `tilesCount` en vivo, no solo un número.
+- **mock `wsFake`** (dev, `VITE_USE_MOCKS=true`): emite `handCount` en
+  `tile_placed`, simula un bot burst (rivales que juegan o pasan) y `player_passed`
+  para poder ejercitar A–D sin backend. (Backend no estaba arriba en :8000 al
+  cerrar este cambio; verificación contra backend real con `VITE_USE_MOCKS=false`
+  queda pendiente de infra. `tsc -b` + `npm run build` verdes; dev server arranca.)
+
 #### Added (guard de auth + UX de errores, 2026-05-25)
 - **`<RequireAuth>` en `App.tsx` (ADR-009)**: invariante de ruta — ninguna
   pantalla protegida (`/menu`, `/play/*`, `/profile/*`, `/settings`, `/store`,
