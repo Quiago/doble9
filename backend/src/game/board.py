@@ -121,15 +121,23 @@ class Board:
 
         if side == "left":
             assert self._left_end is not None
-            is_flipped = (tile.low == self._left_end)
+            # The pip touching the chain sits on the right of the new tile;
+            # flip when it is `low` so `ends` reads outward→inward.
+            is_flipped = tile.low == self._left_end
             self._left_end = tile.other_end(self._left_end)
-            placed = PlacedTile(tile=tile, order=len(self._tiles), by_seat=by_seat, is_flipped=is_flipped)
+            placed = PlacedTile(
+                tile=tile, order=len(self._tiles), by_seat=by_seat, is_flipped=is_flipped
+            )
             self._tiles.insert(0, placed)
         else:
             assert self._right_end is not None
-            is_flipped = (tile.high == self._right_end)
+            # The touching pip sits on the left of the new tile; flip when it
+            # is `high` so `ends` reads inward→outward.
+            is_flipped = tile.high == self._right_end
             self._right_end = tile.other_end(self._right_end)
-            placed = PlacedTile(tile=tile, order=len(self._tiles), by_seat=by_seat, is_flipped=is_flipped)
+            placed = PlacedTile(
+                tile=tile, order=len(self._tiles), by_seat=by_seat, is_flipped=is_flipped
+            )
             self._tiles.append(placed)
         return placed
 

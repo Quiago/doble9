@@ -73,6 +73,28 @@ def test_full_solo_game_reaches_match_end() -> None:
     assert max(rt.sm.scores.values()) >= rt.sm.target_score
 
 
+def test_round_and_match_end_carry_kind_and_points() -> None:
+    # The wire envelopes for round_end/match_end must expose `kind`
+    # (DOMINO|TRANQUE) and integer `points` — the frontend uses them for the
+    # end-of-round overlays. Regression guard for the runtime whitelist.
+    rt = _runtime(seed=11)
+    rt.apply_start("u0")
+
+    seen_match = False
+    for _ in range(20_000):
+        if rt.sm.status == "FINISHED":
+            break
+        mv = _human_move(rt)
+        disp = rt.apply_play("u0", *mv) if mv else rt.apply_pass("u0")
+        for e in disp.public:
+            if e["event"] in {"round_end", "match_end"}:
+                assert e["payload"]["kind"] in {"DOMINO", "TRANQUE"}
+                assert isinstance(e["payload"]["points"], int)
+                assert e["payload"]["winnerTeam"] in {"teamA", "teamB"}
+                seen_match = seen_match or e["event"] == "match_end"
+    assert seen_match  # a full game always ends in match_end
+
+
 def test_reconnect_snapshot_vs_delta() -> None:
     rt = _runtime()
     rt.apply_start("u0")

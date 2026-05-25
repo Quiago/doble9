@@ -190,6 +190,23 @@ cambio".
   coste ≈$0.04/img). 6 tests vía `httpx.MockTransport` (sin red/key);
   total 90, `make check` verde.
 
+#### Fixed (endurecimiento de integración, 2026-05-25)
+- `src/game/board.py`: E501 en las dos líneas de `is_flipped` (la
+  orientación del tablero llegó en un commit `fix(game)` sin pasar el gate)
+  que dejaba **`make check` rojo en `main`**. Líneas envueltas + docstring
+  de la convención de orientación (pip que toca la cadena → lado interior).
+- `src/ws/runtime.py`: `round_end` ahora propaga `kind` y `match_end`
+  propaga `kind` + `points` por el cable (la whitelist del runtime los
+  descartaba). El frontend los usa en los overlays de fin de ronda/partida.
+  **Boundary FE↔BE (para el Architect):** estos campos NO están en
+  `shared/types/game.d.ts` (`RoundEndPayload`/`MatchEndPayload`); requieren
+  ADR + actualización del contrato. No toco `shared/`.
+- Tests nuevos (97 → 103, `make check` verde; +4 e2e verdes con
+  `make test-e2e` contra Postgres/Redis vivos): orientación `is_flipped`
+  (4 casos flip/no-flip por extremo, doble simétrico, cadena larga mixta,
+  con aserción de continuidad de la cadena serializada) y regresión de
+  `kind`/`points` en `round_end`/`match_end` sobre el runtime.
+
 #### Fixed
 - Salida de ronda 1: la regla "quien tiene el 9-9 abre" fallaba cuando
   el 9-9 cae en el pozo (15/55 ≈ 27%, `ValueError`). Generalizado a la

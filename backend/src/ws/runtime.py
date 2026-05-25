@@ -183,6 +183,7 @@ class MatchRuntime:
                         "points": payload["points"],
                         "winnerTeam": payload["winnerTeam"],
                         "scores": payload["scores"],
+                        "kind": payload.get("kind"),
                     },
                 )
             )
@@ -204,6 +205,8 @@ class MatchRuntime:
                     {
                         "winnerTeam": payload["winnerTeam"],
                         "scores": payload["scores"],
+                        "kind": payload.get("kind"),
+                        "points": payload.get("points"),
                     },
                 )
             )
