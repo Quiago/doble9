@@ -1,6 +1,7 @@
 // screens/Landing.tsx — (2) Landing. From design-reference/splash-landing.jsx.
 // AGENT: Frontend.
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Logo, GoldBtn, GhostBtn, OnlineDot, ChromaImg, AuthModal } from "@/components";
 import { ASSETS } from "@/lib/constants";
 import { useGameNav, type NavKey } from "@/lib/nav";
@@ -30,14 +31,27 @@ const BAR_LINKS: Array<{ label: string; key: NavKey }> = [
 
 export default function Landing() {
   const go = useGameNav();
+  const navigate = useNavigate();
+  const loc = useLocation();
   const { isAuthed } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+
+  // Where to go after a successful auth: the page the guard bounced us from,
+  // or the menu by default.
+  const dest = (loc.state as { from?: string } | null)?.from ?? "/menu";
+  const redirected = Boolean((loc.state as { from?: string } | null)?.from);
+
+  // If RequireAuth sent an unauthenticated user here, surface the login prompt
+  // immediately so they don't have to hunt for the "JUGAR AHORA" button.
+  useEffect(() => {
+    if (redirected && !isAuthed) setShowAuth(true);
+  }, [redirected, isAuthed]);
 
   const handlePlay = () => {
     if (!isAuthed) {
       setShowAuth(true);
     } else {
-      go("menu");
+      navigate(dest, { replace: true });
     }
   };
 
@@ -130,12 +144,12 @@ export default function Landing() {
       </div>
 
       {showAuth && (
-        <AuthModal 
-          onClose={() => setShowAuth(false)} 
+        <AuthModal
+          onClose={() => setShowAuth(false)}
           onSuccess={() => {
             setShowAuth(false);
-            go("menu");
-          }} 
+            navigate(dest, { replace: true });
+          }}
         />
       )}
     </div>

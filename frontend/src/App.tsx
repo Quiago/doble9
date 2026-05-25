@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, type ReactElement } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { dlog } from "@/lib/debug";
 import { useAuth } from "@/hooks";
+import { useUiStore } from "@/store/uiStore";
 import Splash from "@/screens/Splash";
 import Landing from "@/screens/Landing";
 import MainMenu from "@/screens/MainMenu";
@@ -36,6 +37,27 @@ function AuthBootstrap() {
   return null;
 }
 
+/**
+ * ADR-009 — route-level auth invariant. A protected screen never renders
+ * without a token; instead of bouncing the user silently, we tell them why
+ * (toast) and send them to Landing, which auto-opens the AuthModal and
+ * remembers `from` so login returns them to where they were headed.
+ */
+function RequireAuth({ children }: { children: ReactElement }) {
+  const { isAuthed } = useAuth();
+  const loc = useLocation();
+  useEffect(() => {
+    if (!isAuthed) {
+      dlog("auth", `guard blocked ${loc.pathname} → /welcome`);
+      useUiStore.getState().toast("Inicia sesión para continuar", "info");
+    }
+  }, [isAuthed, loc.pathname]);
+  if (!isAuthed) {
+    return <Navigate to="/welcome" replace state={{ from: loc.pathname }} />;
+  }
+  return children;
+}
+
 export default function App() {
   return (
     <>
@@ -43,19 +65,22 @@ export default function App() {
       <AuthBootstrap />
       <ToastContainer />
       <Routes>
+      {/* Public — reachable without a token (boot + pre-login funnel). */}
       <Route path="/" element={<Splash />} />
       <Route path="/welcome" element={<Landing />} />
-      <Route path="/menu" element={<MainMenu />} />
-      <Route path="/play/solo" element={<Setup />} />
-      <Route path="/play/lobby/:code" element={<Lobby />} />
-      <Route path="/play/match/:id" element={<GameTable />} />
-      <Route path="/play/match/:id/results" element={<Results />} />
       <Route path="/tutorial/:level" element={<Tutorial />} />
-      <Route path="/profile/:userId" element={<Profile />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/store" element={<Store />} />
-      <Route path="/league" element={<League />} />
-      <Route path="/tournament" element={<Tournament />} />
+      {/* Protected — RequireAuth (ADR-009). Tutorial stays public as a
+          try-before-signup demo; everything below needs a session. */}
+      <Route path="/menu" element={<RequireAuth><MainMenu /></RequireAuth>} />
+      <Route path="/play/solo" element={<RequireAuth><Setup /></RequireAuth>} />
+      <Route path="/play/lobby/:code" element={<RequireAuth><Lobby /></RequireAuth>} />
+      <Route path="/play/match/:id" element={<RequireAuth><GameTable /></RequireAuth>} />
+      <Route path="/play/match/:id/results" element={<RequireAuth><Results /></RequireAuth>} />
+      <Route path="/profile/:userId" element={<RequireAuth><Profile /></RequireAuth>} />
+      <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+      <Route path="/store" element={<RequireAuth><Store /></RequireAuth>} />
+      <Route path="/league" element={<RequireAuth><League /></RequireAuth>} />
+      <Route path="/tournament" element={<RequireAuth><Tournament /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

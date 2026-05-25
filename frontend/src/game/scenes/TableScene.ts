@@ -135,7 +135,8 @@ export class TableScene extends Phaser.Scene {
       { tl: 0, tr: 0, bl: 24, br: 24 },
     );
 
-    const isBoardEmpty = !useGameStore.getState().game?.board?.tiles || useGameStore.getState().game.board.tiles.length === 0;
+    const boardTiles = useGameStore.getState().game?.board?.tiles;
+    const isBoardEmpty = !boardTiles || boardTiles.length === 0;
 
     if (isBoardEmpty) {
       // Draw center drop zone
@@ -205,49 +206,6 @@ export class TableScene extends Phaser.Scene {
     right?: Phaser.GameObjects.Text;
     center?: Phaser.GameObjects.Text;
   } = {};
-  private drawDropZone(r: Phaser.Geom.Rectangle, glyph: string, side: BoardSide | "center") {
-    const active = this.dragOver === side;
-    const g = this.gfx;
-    if (active) g.fillStyle(hex("--dorado"), 0.15).fillRoundedRect(r.x, r.y, r.width, r.height, 8);
-    g.lineStyle(2, hex("--dorado"), active ? 1 : 0.2);
-    // dashed border
-    this.strokeDashedRoundRect(g, r, 8, 6, 4);
-
-    let lbl = this.dzLabels[side];
-    if (!lbl) {
-      lbl = this.add.text(0, 0, glyph, {
-        fontSize: side === "center" ? "14px" : "18px",
-        fontFamily: "Montserrat, sans-serif",
-        fontStyle: "600",
-        color: "#ffffff"
-      }).setOrigin(0.5);
-      this.dzLabels[side] = lbl;
-    } else {
-      lbl.setText(glyph);
-      lbl.setVisible(true);
-    }
-    lbl.setPosition(r.centerX, r.centerY).setAlpha(active ? 1 : 0.3);
-  }
-
-  private strokeDashedRoundRect(
-    g: Phaser.GameObjects.Graphics,
-    r: Phaser.Geom.Rectangle,
-    radius: number,
-    dash: number,
-    gap: number,
-  ) {
-    const path = new Phaser.Curves.Path();
-    path.add(new Phaser.Curves.Line([r.x + radius, r.y, r.right - radius, r.y]));
-    path.add(new Phaser.Curves.Line([r.right, r.y + radius, r.right, r.bottom - radius]));
-    path.add(new Phaser.Curves.Line([r.right - radius, r.bottom, r.x + radius, r.bottom]));
-    path.add(new Phaser.Curves.Line([r.x, r.bottom - radius, r.x, r.y + radius]));
-    const len = path.getLength();
-    for (let d = 0; d < len; d += dash + gap) {
-      const p1 = path.getPoint(d / len);
-      const p2 = path.getPoint(Math.min(d + dash, len) / len);
-      if (p1 && p2) g.lineBetween(p1.x, p1.y, p2.x, p2.y);
-    }
-  }
 
   // ── Dock + hand ─────────────────────────────────────────────────────────
   private layoutDock() {
@@ -474,7 +432,8 @@ export class TableScene extends Phaser.Scene {
   }
 
   private hitDropZone(x: number, y: number): BoardSide | "center" | null {
-    const isBoardEmpty = !useGameStore.getState().game?.board?.tiles || useGameStore.getState().game.board.tiles.length === 0;
+    const boardTiles = useGameStore.getState().game?.board?.tiles;
+    const isBoardEmpty = !boardTiles || boardTiles.length === 0;
     if (isBoardEmpty) {
       if (Phaser.Geom.Rectangle.Contains(this.dropHitboxes.center, x, y)) return "center";
       return null;
