@@ -106,14 +106,19 @@ Then open the Vercel URL, start a solo match, and confirm bots play
 ## Local production-parity build
 
 ```bash
-# Backend container (uses the live infra on :5433/:6379)
+# Backend container (uses the live infra on :5432/:6379 — matches the
+# default port in backend/docker-compose.yml; override to :5433 only if
+# you set POSTGRES_PORT=5433 to dodge a host-native Postgres).
 cd backend && docker build -t doble9s-backend .
 docker run --rm --network host \
   -e PORT=8010 \
-  -e DATABASE_URL='postgresql://doble9s:doble9s@localhost:5433/doble9s' \
+  -e DATABASE_URL='postgresql://doble9s:doble9s@localhost:5432/doble9s' \
   -e REDIS_URL='redis://localhost:6379/0' \
   -e SECRET_KEY='dev-only-please-use-32+bytes-in-prod' \
   doble9s-backend
+
+# Or via Make (ADR-012): `make docker-build && make docker-run` honors
+# ${POSTGRES_PORT} from your local .env automatically.
 
 # Frontend production build + preview
 cd frontend && npm run build && npm run preview
