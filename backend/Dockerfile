@@ -43,4 +43,12 @@ EXPOSE 8000
 
 # Apply migrations, then start the single-worker ASGI app. $PORT is provided by
 # Render/Railway; falls back to 8000 locally.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+#
+# --proxy-headers + --forwarded-allow-ips="*": Render (and Railway) terminate
+# TLS at an edge proxy and forward via plain HTTP, attaching X-Forwarded-Proto
+# and X-Forwarded-For. uvicorn must trust those to (a) build correct absolute
+# URLs (scheme=https), (b) mark cookies as Secure on HTTPS, and (c) let
+# python-socketio negotiate WS upgrade over wss://. Render's proxy IPs are not
+# stable, so we trust all (the proxy is the only path inbound to the container).
+# See ADR-008 + future ADR-012 "Deploy hardening Render+Vercel".
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]
