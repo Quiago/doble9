@@ -13,46 +13,85 @@ Deploy order: **backend first** (you need its public URL for the frontend env).
 
 ---
 
-## 1. Backend → Render (Docker)
+## 1. Backend → Render (Docker, three manual services)
 
 Files: [`backend/Dockerfile`](../backend/Dockerfile),
-[`render.yaml`](../render.yaml).
+[`render.yaml`](../render.yaml) (reference only on the free plan, see below).
 
-> ⚠️ **Must be created as a Blueprint, not as a manual Web Service.** Render
-> only reads `render.yaml` from the **New + → Blueprint** flow. If you create
-> the service from **New + → Web Service**, Render auto-detects Python from
-> the repo root, ignores `render.yaml`, and the build fails with
-> `No pyproject.toml found` (the project's `pyproject.toml` lives in
-> `backend/`, not at the root). If you have a Python service already, delete
-> it and recreate via Blueprint.
+> ⚠️ **Render's Blueprint flow is a paid feature.** On the free plan you
+> cannot create services from `render.yaml`; you must provision the three
+> services manually from the dashboard. `render.yaml` is kept in-tree as
+> documentation and for future paid migration — its values (env vars, plan,
+> health check path, Docker context) are the source of truth for what to
+> click in the dashboard.
 
-1. Push the repo to GitHub.
-2. Render → **New +** → **Blueprint** → select the repo. Render reads
-   `render.yaml` and provisions:
-   - `doble9s-backend` (Docker web service, `healthCheckPath: /health`),
-   - `doble9s-db` (Postgres 16),
-   - `doble9s-redis` (Key Value / Redis).
-3. Set the two `sync: false` env vars in the dashboard:
-   - `CORS_ORIGINS` = your Vercel URL, e.g. `https://doble9s.vercel.app`
-     (comma-separated for multiple).
-   - `GEMINI_API_KEY` = your key (or leave blank; avatars are optional).
-4. Deploy. The container runs `alembic upgrade head` then starts uvicorn
-   (single worker — see below). Verify: `curl https://<svc>.onrender.com/health`
-   → `{"status":"ok"}`.
+Provision in this order. The DB and Redis must exist before the Web Service
+so their internal connection strings are available.
 
-Auto-wired env: `DATABASE_URL` (from the DB), `REDIS_URL` (from Redis),
-`SECRET_KEY` (`generateValue: true`). The app normalizes the DB URL's
-`postgresql://` to the `+asyncpg` driver at runtime (ADR-008 `to_async_dsn`),
-so the provider's connection string works as-is.
+### 1.1 Postgres (managed)
+1. **New + → Postgres**.
+2. Name: `doble9s-db` · Database: `doble9s` · User: `doble9s` · Version:
+   `16` · Plan: **Free**.
+3. Once it's live, copy the **Internal Database URL**
+   (`postgresql://doble9s:…@dpg-….oregon-postgres.render.com/doble9s`) —
+   you'll paste it as `DATABASE_URL` in the Web Service. The app normalizes
+   `postgresql://` → `postgresql+asyncpg://` at runtime (ADR-008
+   `to_async_dsn`).
+
+### 1.2 Key Value (Redis)
+1. **New + → Key Value**.
+2. Name: `doble9s-redis` · Plan: **Free** · Maxmemory policy:
+   `allkeys-lru` (default is fine) · IP allow list: empty (private only).
+3. Once it's live, copy the **Internal Redis URL**
+   (`redis://red-….oregon-keyvalue.render.com:6379`) — paste it as
+   `REDIS_URL`.
+
+### 1.3 Web Service (Docker)
+1. **New + → Web Service** → connect this GitHub repo.
+2. Settings (these matter — defaults will fail):
+   - **Runtime / Language:** **Docker** *(not Python; Python would
+     autodetect at the repo root where `pyproject.toml` doesn't exist)*.
+   - **Dockerfile Path:** `backend/Dockerfile`
+   - **Docker Build Context Directory:** `backend`
+   - **Branch:** `main`
+   - **Plan:** **Starter** (persistent instance — Free spins down and
+     kills the WebSocket; Starter keeps the container hot).
+   - **Health Check Path:** `/health`
+   - **Auto-Deploy:** On
+3. **Environment** tab — add these env vars:
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | (Internal URL from §1.1) |
+   | `REDIS_URL` | (Internal URL from §1.2) |
+   | `SECRET_KEY` | a random ≥32-byte string (e.g. `openssl rand -hex 32`) |
+   | `ALGORITHM` | `HS256` |
+   | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` |
+   | `CORS_ORIGINS` | `https://doble9s.vercel.app,https://doble9s-*.vercel.app` |
+   | `GEMINI_API_KEY` | (your key, or leave blank — avatars are optional) |
+4. **Create Web Service.** The container runs `alembic upgrade head` then
+   starts uvicorn with `--proxy-headers` (single worker — see below).
+   Verify: `curl https://<svc>.onrender.com/health` → `{"status":"ok"}`.
 
 **Single worker, on purpose.** The WS `MatchRegistry` is in-process (M1), so
 multiple workers/instances would fragment matches. Keep one instance until M2
 moves the registry behind Redis + a Socket.IO Redis adapter.
 
+### Common failure modes (free-plan dashboard flow)
+- **Build log says `Using Python version …` / `No pyproject.toml found`**
+  → you picked the **Python** runtime instead of **Docker**. Delete the
+  service and recreate, choosing **Docker** in the runtime selector.
+- **Build runs but `/health` 502s** → check the Dockerfile path
+  (`backend/Dockerfile`) and build context (`backend`); if either is wrong
+  the image builds but doesn't expose what Render expects.
+- **`asyncpg.exceptions.InvalidPasswordError` / DSN errors** → make sure
+  you pasted the **Internal** URL (not the External one) into
+  `DATABASE_URL`. External URLs require SSL+credentials in a different
+  shape.
+
 ### Railway alternative
-No blueprint file; set in the dashboard: build from `backend/Dockerfile`, add
-Postgres + Redis plugins, copy their URLs into `DATABASE_URL` / `REDIS_URL`,
-set `SECRET_KEY` / `CORS_ORIGINS`. Same Dockerfile, same single-worker rule.
+Same Dockerfile, same single-worker rule. In the Railway dashboard: build
+from `backend/Dockerfile`, add Postgres + Redis plugins, copy their URLs
+into `DATABASE_URL` / `REDIS_URL`, set `SECRET_KEY` / `CORS_ORIGINS`.
 
 ---
 
