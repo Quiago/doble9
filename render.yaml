@@ -1,5 +1,11 @@
 # Doble 9's — Render blueprint (backend + Postgres + Redis). See ADR-008.
-# Deploy: push to GitHub, then Render → "New +" → "Blueprint" → pick this repo.
+#
+# NOTE: Render's Blueprint flow is a paid feature. On the free plan,
+# provision the three services manually from the dashboard — this file
+# documents the exact values (plan, env vars, health check path, Docker
+# context) you must click. See docs/DEPLOY.md §1 for the step-by-step.
+# Migrate to Blueprint-driven provisioning when you upgrade plans.
+#
 # Frontend is NOT here — it deploys to Vercel (see /vercel.json).
 services:
   - type: web
