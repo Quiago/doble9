@@ -100,10 +100,14 @@ into `DATABASE_URL` / `REDIS_URL`, set `SECRET_KEY` / `CORS_ORIGINS`.
 File: [`vercel.json`](../vercel.json) (at the repo root, on purpose).
 
 > ⚠️ **Both `installCommand` and `buildCommand` are pinned in `vercel.json`**
-> so Vercel does not auto-detect `frontend/package.json` and run its own
-> `npm install` (which then collides with our `npm ci` step and fails with
-> `EUSAGE: The npm ci command can only install with an existing
-> package-lock.json`). Do not override these in the Vercel dashboard.
+> and both use `cd frontend && …`, not `npm --prefix frontend …`. The
+> `--prefix` flag only changes where `node_modules` is installed; it does
+> NOT change `npm`'s cwd, so `npm --prefix frontend ci` reads
+> `package-lock.json` from `/vercel/path0` (the repo root, where no lockfile
+> exists) and fails with `EUSAGE: npm ci command can only install with an
+> existing package-lock.json`. `cd frontend && npm ci` actually moves into
+> the directory before running, which is what we want. Do not override
+> these in the Vercel dashboard.
 
 1. Vercel → **Add New** → **Project** → import the repo.
 2. **Root Directory: leave as the repo root** (do *not* set it to `frontend/`).
