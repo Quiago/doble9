@@ -18,6 +18,14 @@ Deploy order: **backend first** (you need its public URL for the frontend env).
 Files: [`backend/Dockerfile`](../backend/Dockerfile),
 [`render.yaml`](../render.yaml).
 
+> ⚠️ **Must be created as a Blueprint, not as a manual Web Service.** Render
+> only reads `render.yaml` from the **New + → Blueprint** flow. If you create
+> the service from **New + → Web Service**, Render auto-detects Python from
+> the repo root, ignores `render.yaml`, and the build fails with
+> `No pyproject.toml found` (the project's `pyproject.toml` lives in
+> `backend/`, not at the root). If you have a Python service already, delete
+> it and recreate via Blueprint.
+
 1. Push the repo to GitHub.
 2. Render → **New +** → **Blueprint** → select the repo. Render reads
    `render.yaml` and provisions:
@@ -51,6 +59,12 @@ set `SECRET_KEY` / `CORS_ORIGINS`. Same Dockerfile, same single-worker rule.
 ## 2. Frontend → Vercel
 
 File: [`vercel.json`](../vercel.json) (at the repo root, on purpose).
+
+> ⚠️ **Both `installCommand` and `buildCommand` are pinned in `vercel.json`**
+> so Vercel does not auto-detect `frontend/package.json` and run its own
+> `npm install` (which then collides with our `npm ci` step and fails with
+> `EUSAGE: The npm ci command can only install with an existing
+> package-lock.json`). Do not override these in the Vercel dashboard.
 
 1. Vercel → **Add New** → **Project** → import the repo.
 2. **Root Directory: leave as the repo root** (do *not* set it to `frontend/`).
